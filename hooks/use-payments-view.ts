@@ -195,6 +195,7 @@ export function usePaymentsView() {
     // data
     paymentsTable,
     visiblePurchases,
+    filteredPurchases,
     startIndex,
     totalDisplay,
     uniquePaymentTypes,

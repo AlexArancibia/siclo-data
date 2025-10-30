@@ -59,6 +59,7 @@ export default function PurchasesPage() {
 
   const {
     paymentsTable,
+    filteredPurchases,
     visiblePurchases,
     startIndex,
     totalDisplay,
@@ -101,13 +102,21 @@ export default function PurchasesPage() {
   }
 
   const hasActiveFilters = isClientFiltering
-  const totalPages = isClientFiltering ? clientTotalPages : (paymentsTable?.totalPages ?? 1)
   const endIndex = Math.max(startIndex - 1 + (visiblePurchases.length), 0)
 
-  const totalTransactions = paymentsTable?.totalElements ?? totalDisplay
-  const approvedTransactions = paymentsTable?.summary.operationSummary.approved ?? 0
+  const totalTransactions = isClientFiltering
+    ? filteredPurchases.length
+    : (paymentsTable?.totalElements ?? totalDisplay)
+
+  const approvedTransactions = isClientFiltering
+    ? filteredPurchases.filter((p) => Boolean(p.accreditationDate)).length
+    : (paymentsTable?.summary.operationSummary.approved ?? 0)
+
   const pendingTransactions = Math.max(0, totalTransactions - approvedTransactions)
-  const totalRevenue = paymentsTable?.summary.totalAmountReceived ?? 0
+
+  const totalRevenue = isClientFiltering
+    ? filteredPurchases.reduce((sum, p) => sum + (p.amountReceived ?? 0), 0)
+    : (paymentsTable?.summary.totalAmountReceived ?? 0)
 
   return (
     <div className="space-y-6">
