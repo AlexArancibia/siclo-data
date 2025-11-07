@@ -59,18 +59,12 @@ export default function PurchasesPage() {
 
   const {
     paymentsTable,
-    filteredPurchases,
     visiblePurchases,
     startIndex,
     totalDisplay,
-    uniquePaymentTypes,
-    isClientFiltering,
     currentPage,
-    clientTotalPages,
     itemsPerPage,
     getPaymentTable,
-    applyFilters,
-    clearFilters,
     goFirst,
     goPrev,
     goNext,
@@ -84,39 +78,13 @@ export default function PurchasesPage() {
     return () => cancelAnimationFrame(rafId)
   }, [])
 
-  const handleSearch = () => {
-    applyFilters({
-      searchTerm,
-      paymentType: paymentTypeFilter,
-      dateFrom,
-      dateTo,
-    })
-  }
-
-  const handleClearFilters = () => {
-    setSearchTerm("")
-    setPaymentTypeFilter("all")
-    setDateFrom("")
-    setDateTo("")
-    clearFilters()
-  }
-
-  const hasActiveFilters = isClientFiltering
   const endIndex = Math.max(startIndex - 1 + (visiblePurchases.length), 0)
 
-  const totalTransactions = isClientFiltering
-    ? filteredPurchases.length
-    : (paymentsTable?.totalElements ?? totalDisplay)
-
-  const approvedTransactions = isClientFiltering
-    ? filteredPurchases.filter((p) => Boolean(p.accreditationDate)).length
-    : (paymentsTable?.summary.operationSummary.approved ?? 0)
-
+  // Calculate stats from API summary
+  const totalTransactions = paymentsTable?.totalElements ?? totalDisplay
+  const approvedTransactions = paymentsTable?.summary.operationSummary.approved ?? 0
   const pendingTransactions = Math.max(0, totalTransactions - approvedTransactions)
-
-  const totalRevenue = isClientFiltering
-    ? filteredPurchases.reduce((sum, p) => sum + (p.amountReceived ?? 0), 0)
-    : (paymentsTable?.summary.totalAmountReceived ?? 0)
+  const totalRevenue = paymentsTable?.summary.totalAmountReceived ?? 0
 
   return (
     <div className="space-y-6">
@@ -210,14 +178,10 @@ export default function PurchasesPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
-                {uniquePaymentTypes.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type === "credit_card" && "Tarjeta Crédito"}
-                    {type === "debit_card" && "Tarjeta Débito"}
-                    {type === "bank_transfer" && "Transferencia"}
-                    {type === "cash" && "Efectivo"}
-                  </SelectItem>
-                ))}
+                <SelectItem value="credit_card">Tarjeta Crédito</SelectItem>
+                <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
+                <SelectItem value="bank_transfer">Transferencia</SelectItem>
+                <SelectItem value="cash">Efectivo</SelectItem>
               </SelectContent>
             </Select>
 
@@ -236,20 +200,10 @@ export default function PurchasesPage() {
               className="w-full sm:w-40"
             />
 
-            <Button onClick={handleSearch} className="w-full sm:w-auto">
+            <Button onClick={() => {}} className="w-full sm:w-auto">
               <Search className="w-4 h-4 mr-2" />
               Buscar
             </Button>
-
-            {hasActiveFilters && (
-              <Button
-                onClick={handleClearFilters}
-                variant="outline"
-                className="w-full sm:w-auto bg-transparent"
-              >
-                Limpiar
-              </Button>
-            )}
           </div>
 
           {/* Purchases Table */}
@@ -333,7 +287,7 @@ export default function PurchasesPage() {
 
           {visiblePurchases.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-500">No se encontraron transacciones que coincidan con los filtros.</p>
+              <p className="text-gray-500">No hay transacciones disponibles.</p>
             </div>
           )}
 
@@ -347,7 +301,7 @@ export default function PurchasesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goFirst}
-                  disabled={isClientFiltering ? currentPage === 1 : (paymentsTable?.page ?? 0) === 0}
+                  disabled={(paymentsTable?.page ?? 0) === 0}
                   title="Primera página"
                 >
                   <ChevronsLeft className="w-4 h-4" />
@@ -356,7 +310,7 @@ export default function PurchasesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goPrev}
-                  disabled={isClientFiltering ? currentPage === 1 : (paymentsTable?.page ?? 0) === 0}
+                  disabled={(paymentsTable?.page ?? 0) === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Anterior
@@ -365,7 +319,7 @@ export default function PurchasesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goNext}
-                  disabled={isClientFiltering ? currentPage >= clientTotalPages : (paymentsTable?.page ?? 0) + 1 >= (paymentsTable?.totalPages ?? 1)}
+                  disabled={(paymentsTable?.page ?? 0) + 1 >= (paymentsTable?.totalPages ?? 1)}
                 >
                   Siguiente
                   <ChevronRight className="w-4 h-4" />
@@ -374,7 +328,7 @@ export default function PurchasesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goLast}
-                  disabled={isClientFiltering ? currentPage >= clientTotalPages : (paymentsTable?.page ?? 0) + 1 >= (paymentsTable?.totalPages ?? 1)}
+                  disabled={(paymentsTable?.page ?? 0) + 1 >= (paymentsTable?.totalPages ?? 1)}
                   title="Última página"
                 >
                   <ChevronsRight className="w-4 h-4" />

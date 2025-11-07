@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,94 +25,7 @@ import {
   ChevronsRight,
 } from "lucide-react"
 import Link from "next/link"
-
-// Sample client data
-const clientsData = [
-  {
-    id: "1",
-    name: "María González",
-    email: "maria.gonzalez@email.com",
-    phone: "+34 612 345 678",
-    country: "España",
-    city: "Madrid",
-    totalClasses: 24,
-    totalSpent: 1200,
-    lastVisit: "2024-01-15",
-    status: "Activo",
-    joinDate: "2023-06-15",
-    favoriteClass: "Yoga Matutina",
-  },
-  {
-    id: "2",
-    name: "Carlos Rodríguez",
-    email: "carlos.rodriguez@email.com",
-    phone: "+52 555 123 456",
-    country: "México",
-    city: "Ciudad de México",
-    totalClasses: 18,
-    totalSpent: 900,
-    lastVisit: "2024-01-12",
-    status: "Activo",
-    joinDate: "2023-08-20",
-    favoriteClass: "Crossfit Funcional",
-  },
-  {
-    id: "3",
-    name: "Ana Martínez",
-    email: "ana.martinez@email.com",
-    phone: "+54 11 2345 6789",
-    country: "Argentina",
-    city: "Buenos Aires",
-    totalClasses: 32,
-    totalSpent: 1600,
-    lastVisit: "2024-01-10",
-    status: "VIP",
-    joinDate: "2023-03-10",
-    favoriteClass: "Pilates Avanzado",
-  },
-  {
-    id: "4",
-    name: "Luis Fernández",
-    email: "luis.fernandez@email.com",
-    phone: "+57 300 123 4567",
-    country: "Colombia",
-    city: "Bogotá",
-    totalClasses: 8,
-    totalSpent: 400,
-    lastVisit: "2023-12-28",
-    status: "Inactivo",
-    joinDate: "2023-11-05",
-    favoriteClass: "Spinning Intensivo",
-  },
-  {
-    id: "5",
-    name: "Carmen López",
-    email: "carmen.lopez@email.com",
-    phone: "+34 687 654 321",
-    country: "España",
-    city: "Barcelona",
-    totalClasses: 45,
-    totalSpent: 2250,
-    lastVisit: "2024-01-14",
-    status: "VIP",
-    joinDate: "2023-01-20",
-    favoriteClass: "Yoga Matutina",
-  },
-  {
-    id: "6",
-    name: "Roberto Silva",
-    email: "roberto.silva@email.com",
-    phone: "+55 11 98765 4321",
-    country: "Brasil",
-    city: "São Paulo",
-    totalClasses: 12,
-    totalSpent: 600,
-    lastVisit: "2024-01-08",
-    status: "Activo",
-    joinDate: "2023-09-15",
-    favoriteClass: "Crossfit Funcional",
-  },
-]
+import { useClientsView } from "@/hooks/use-clients-view"
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -134,70 +47,34 @@ export default function ClientsPage() {
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
 
-  const [currentPage, setCurrentPage] = useState(1)
-  const [appliedSearchTerm, setAppliedSearchTerm] = useState("")
-  const [appliedStatusFilter, setAppliedStatusFilter] = useState("all")
-  const [appliedCountryFilter, setAppliedCountryFilter] = useState("all")
-  const [appliedDateFrom, setAppliedDateFrom] = useState("")
-  const [appliedDateTo, setAppliedDateTo] = useState("")
-  const itemsPerPage = 10
+  const {
+    clientsTable,
+    visibleClients,
+    startIndex,
+    totalDisplay,
+    currentPage,
+    itemsPerPage,
+    getClientsTable,
+    goFirst,
+    goPrev,
+    goNext,
+    goLast,
+  } = useClientsView();
 
-  const handleSearch = () => {
-    setAppliedSearchTerm(searchTerm)
-    setAppliedStatusFilter(statusFilter)
-    setAppliedCountryFilter(countryFilter)
-    setAppliedDateFrom(dateFrom)
-    setAppliedDateTo(dateTo)
-    setCurrentPage(1)
-  }
+  useEffect(() => {
+    const rafId = requestAnimationFrame(() => {
+      getClientsTable('2025-07-07', '2025-07-20', 0, itemsPerPage)
+    })
+    return () => cancelAnimationFrame(rafId)
+  }, [])
 
-  const handleClearFilters = () => {
-    setSearchTerm("")
-    setStatusFilter("all")
-    setCountryFilter("all")
-    setDateFrom("")
-    setDateTo("")
-    setAppliedSearchTerm("")
-    setAppliedStatusFilter("all")
-    setAppliedCountryFilter("all")
-    setAppliedDateFrom("")
-    setAppliedDateTo("")
-    setCurrentPage(1)
-  }
+  const endIndex = Math.max(startIndex - 1 + (visibleClients.length), 0)
 
-  const hasActiveFilters =
-    appliedSearchTerm !== "" ||
-    appliedStatusFilter !== "all" ||
-    appliedCountryFilter !== "all" ||
-    appliedDateFrom !== "" ||
-    appliedDateTo !== ""
-
-  const filteredClients = clientsData.filter((client) => {
-    const matchesSearch =
-      client.name.toLowerCase().includes(appliedSearchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(appliedSearchTerm.toLowerCase())
-    const matchesStatus = appliedStatusFilter === "all" || client.status === appliedStatusFilter
-    const matchesCountry = appliedCountryFilter === "all" || client.country === appliedCountryFilter
-
-    let matchesDate = true
-    if (appliedDateFrom || appliedDateTo) {
-      const clientDate = new Date(client.joinDate)
-      if (appliedDateFrom) matchesDate = matchesDate && clientDate >= new Date(appliedDateFrom)
-      if (appliedDateTo) matchesDate = matchesDate && clientDate <= new Date(appliedDateTo)
-    }
-
-    return matchesSearch && matchesStatus && matchesCountry && matchesDate
-  })
-
-  const totalPages = Math.ceil(filteredClients.length / itemsPerPage)
-  const startIndex = (currentPage - 1) * itemsPerPage
-  const endIndex = startIndex + itemsPerPage
-  const paginatedClients = filteredClients.slice(startIndex, endIndex)
-
-  const totalClients = clientsData.length
-  const activeClients = clientsData.filter((c) => c.status === "Activo" || c.status === "VIP").length
-  const vipClients = clientsData.filter((c) => c.status === "VIP").length
-  const totalRevenue = clientsData.reduce((sum, client) => sum + client.totalSpent, 0)
+  // Calculate stats from API summary
+  const totalClients = clientsTable?.summary?.totalClients ?? totalDisplay
+  const activeClients = clientsTable?.summary?.activeClients ?? 0
+  const vipClients = clientsTable?.summary?.vipClients ?? 0
+  const totalRevenue = clientsTable?.summary?.totalRevenue ?? 0
 
   return (
     <div className="space-y-6">
@@ -262,7 +139,7 @@ export default function ClientsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Ingresos Totales</p>
-                <p className="text-3xl font-bold text-orange-700">${totalRevenue.toLocaleString()}</p>
+                <p className="text-2xl font-bold text-orange-700">S/ {(totalRevenue ?? 0).toFixed(2)}</p>
               </div>
               <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center">
                 <TrendingUp className="w-6 h-6 text-orange-600" />
@@ -329,20 +206,15 @@ export default function ClientsPage() {
                 placeholder="Hasta"
                 className="flex-1"
               />
-              <Button onClick={handleSearch} className="w-full sm:w-auto">
+              <Button onClick={() => {}} className="w-full sm:w-auto">
                 <Search className="w-4 h-4 mr-2" />
                 Buscar
               </Button>
-              {hasActiveFilters && (
-                <Button onClick={handleClearFilters} variant="outline" className="w-full sm:w-auto bg-transparent">
-                  Limpiar
-                </Button>
-              )}
             </div>
           </div>
 
           {/* Clients Table */}
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -357,13 +229,15 @@ export default function ClientsPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedClients.map((client) => (
+                {visibleClients.map((client) => (
                   <TableRow key={client.id}>
                     <TableCell>
                       <div>
                         <div className="font-medium">{client.name}</div>
                         <div className="text-sm text-gray-500">{client.email}</div>
-                        <div className="text-sm text-gray-500">{client.phone}</div>
+                        {client.phone && (
+                          <div className="text-sm text-gray-500">{client.phone}</div>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -373,17 +247,19 @@ export default function ClientsPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">{client.totalClasses}</div>
+                      <div className="font-medium">{client.totalClasses ?? 0}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="font-medium">${client.totalSpent}</div>
+                      <div className="font-medium">S/ {(client.totalSpent ?? 0).toFixed(2)}</div>
                     </TableCell>
                     <TableCell>
-                      <div className="text-sm">{new Date(client.lastVisit).toLocaleDateString("es-ES")}</div>
+                      <div className="text-sm">
+                        {client.lastVisit ? new Date(client.lastVisit).toLocaleDateString("es-ES") : '-'}
+                      </div>
                     </TableCell>
                     <TableCell>{getStatusBadge(client.status)}</TableCell>
                     <TableCell>
-                      <div className="text-sm">{client.favoriteClass}</div>
+                      <div className="text-sm">{client.favoriteClass || '-'}</div>
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -416,24 +292,23 @@ export default function ClientsPage() {
             </Table>
           </div>
 
-          {paginatedClients.length === 0 && (
+          {visibleClients.length === 0 && (
             <div className="text-center py-8">
-              <p className="text-gray-500">No se encontraron clientes que coincidan con los filtros.</p>
+              <p className="text-gray-500">No hay clientes disponibles.</p>
             </div>
           )}
 
-          {filteredClients.length > 0 && (
+          {visibleClients.length > 0 && (
             <div className="flex items-center justify-between mt-6">
               <div className="text-sm text-gray-600">
-                Mostrando {startIndex + 1} a {Math.min(endIndex, filteredClients.length)} de {filteredClients.length}{" "}
-                clientes
+                Mostrando {startIndex} a {endIndex} de {totalDisplay} clientes
               </div>
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(1)}
-                  disabled={currentPage === 1}
+                  onClick={goFirst}
+                  disabled={(clientsTable?.page ?? 0) === 0}
                   title="Primera página"
                 >
                   <ChevronsLeft className="w-4 h-4" />
@@ -441,30 +316,17 @@ export default function ClientsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                  disabled={currentPage === 1}
+                  onClick={goPrev}
+                  disabled={(clientsTable?.page ?? 0) === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Anterior
                 </Button>
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                    <Button
-                      key={page}
-                      variant={currentPage === page ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setCurrentPage(page)}
-                      className="w-8 h-8 p-0"
-                    >
-                      {page}
-                    </Button>
-                  ))}
-                </div>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
-                  disabled={currentPage === totalPages}
+                  onClick={goNext}
+                  disabled={(clientsTable?.page ?? 0) + 1 >= (clientsTable?.totalPages ?? 1)}
                 >
                   Siguiente
                   <ChevronRight className="w-4 h-4" />
@@ -472,8 +334,8 @@ export default function ClientsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => setCurrentPage(totalPages)}
-                  disabled={currentPage === totalPages}
+                  onClick={goLast}
+                  disabled={(clientsTable?.page ?? 0) + 1 >= (clientsTable?.totalPages ?? 1)}
                   title="Última página"
                 >
                   <ChevronsRight className="w-4 h-4" />
