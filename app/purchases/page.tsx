@@ -17,6 +17,7 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
+  X,
 } from "lucide-react"
 import { usePaymentsView } from "@/hooks/use-payments-view"
 
@@ -51,11 +52,16 @@ const getPaymentTypeBadge = (paymentType: string) => {
   }
 }
 
+// Default dates for initial load
+const DEFAULT_DATE_FROM = '2025-07-07';
+const DEFAULT_DATE_TO = '2025-07-11';
+
 export default function PurchasesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
+  const [clientEmail, setClientEmail] = useState("")
   const [paymentTypeFilter, setPaymentTypeFilter] = useState("all")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
     paymentsTable,
@@ -73,10 +79,39 @@ export default function PurchasesPage() {
 
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
-      getPaymentTable('2025-07-07', '2025-07-11', 0, itemsPerPage)
+      // Use default dates if datepickers are empty
+      const from = dateFrom || DEFAULT_DATE_FROM;
+      const to = dateTo || DEFAULT_DATE_TO;
+      getPaymentTable(from, to, 0, itemsPerPage)
     })
     return () => cancelAnimationFrame(rafId)
   }, [])
+
+  const handleSearch = () => {
+    // Apply filters when search button is clicked
+    // Use default dates if datepickers are empty
+    const from = dateFrom || DEFAULT_DATE_FROM;
+    const to = dateTo || DEFAULT_DATE_TO;
+    const client = clientEmail.trim() || undefined;
+    const payment = paymentTypeFilter !== 'all' ? paymentTypeFilter : undefined;
+    
+    // Check if any filters are actually being applied
+    const hasFilters = client !== undefined || payment !== undefined || dateFrom !== "" || dateTo !== "";
+    setHasAppliedFilters(hasFilters);
+    
+    getPaymentTable(from, to, 0, itemsPerPage, client, payment);
+  }
+
+  const handleClear = () => {
+    // Clear all filters and reset to initial state
+    setClientEmail("");
+    setPaymentTypeFilter("all");
+    setDateFrom("");
+    setDateTo("");
+    setHasAppliedFilters(false);
+    // Reload with default dates and no filters
+    getPaymentTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);
+  }
 
   const endIndex = Math.max(startIndex - 1 + (visiblePurchases.length), 0)
 
@@ -165,22 +200,27 @@ export default function PurchasesPage() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
-                placeholder="Buscar por cliente, email, operación"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                type="email"
+                placeholder="Buscar por correo del cliente"
+                value={clientEmail}
+                onChange={(e) => setClientEmail(e.target.value)}
                 className="pl-10 w-full"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    handleSearch();
+                  }
+                }}
               />
             </div>
 
             <Select value={paymentTypeFilter} onValueChange={setPaymentTypeFilter}>
               <SelectTrigger className="w-full sm:w-44">
-                <SelectValue placeholder="Método de Pago" />
+                <SelectValue placeholder="Tipo de Tarjeta" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos</SelectItem>
                 <SelectItem value="credit_card">Tarjeta Crédito</SelectItem>
                 <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
-                <SelectItem value="bank_transfer">Transferencia</SelectItem>
                 <SelectItem value="cash">Efectivo</SelectItem>
               </SelectContent>
             </Select>
@@ -200,10 +240,16 @@ export default function PurchasesPage() {
               className="w-full sm:w-40"
             />
 
-            <Button onClick={() => {}} className="w-full sm:w-auto">
+            <Button onClick={handleSearch} className="w-full sm:w-auto">
               <Search className="w-4 h-4 mr-2" />
               Buscar
             </Button>
+            {hasAppliedFilters && (
+              <Button onClick={handleClear} variant="outline" className="w-full sm:w-auto">
+                <X className="w-4 h-4 mr-2" />
+                Limpiar
+              </Button>
+            )}
           </div>
 
           {/* Purchases Table */}
