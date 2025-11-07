@@ -1,5 +1,4 @@
 export interface ClientTable {
-  summary?: ClientSummary;
   data: Client[];
   page: number;
   size: number;
@@ -9,18 +8,20 @@ export interface ClientTable {
 }
 
 export interface Client {
-  id: string;
-  name: string;
-  email: string;
-  phone: string | null;
-  country: string;
-  city: string;
-  totalClasses: number;
-  totalSpent: number;
-  lastVisit: string;
-  status: string;
-  favoriteClass?: string;
-  joinDate?: string;
+  clientInfo: ClientInfo;
+  totalReservations: number;
+  totalPayments: number;
+  totalAmountReceived: number;
+  lastPaymentDate: string | null;
+  lastReservationDate: string | null;
+  topDiscipline: string | null;
+}
+
+export interface ClientInfo {
+  clientId: number;
+  clientName: string | null;
+  clientEmail: string;
+  clientPhone: string;
 }
 
 export interface ClientSummary {
