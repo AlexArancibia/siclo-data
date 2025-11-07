@@ -1,4 +1,5 @@
 import { Mapping } from "@/interfaces/mapping";
+import { ImportJobTable } from "@/interfaces/import-job";
 import { useState } from "react";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -6,7 +7,8 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 export function useMappings() {
   const [reservationsMapping, setReservationsMapping] = useState<Mapping[]>([]);
   const [paymentMapping, setPaymentMapping] = useState<Mapping[]>([]);
-  const token = localStorage.getItem("token");
+  const [importJobs, setImportJobs] = useState<ImportJobTable | null>(null);
+  const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
 
   const fetchReservationsMapping = async () => {
     try {
@@ -63,5 +65,30 @@ export function useMappings() {
     }
   };
 
-  return { reservationsMapping, fetchReservationsMapping, paymentMapping, fetchPaymentMapping, updateMapping };
+  const fetchImportJobs = async (from: string, to: string, page: number = 0, size: number = 50) => {
+    try {
+      if (!token) throw new Error("No hay token, inicia sesión");
+
+      const res = await fetch(`${API_BASE_URL}/files/jobs?from=${from}&to=${to}&page=${page}&size=${size}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) throw new Error("Error al obtener los trabajos de importación");
+
+      const data: ImportJobTable = await res.json();
+      setImportJobs(data);
+    } catch (err: any) {
+      console.log(err.message);
+    }
+  };
+
+  return { 
+    reservationsMapping, 
+    fetchReservationsMapping, 
+    paymentMapping, 
+    fetchPaymentMapping, 
+    updateMapping,
+    importJobs,
+    fetchImportJobs
+  };
 }

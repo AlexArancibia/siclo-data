@@ -3,6 +3,7 @@ import type { Metadata } from "next"
 import { Poppins } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
+import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
 
 const poppins = Poppins({
@@ -28,6 +29,7 @@ export default function RootLayout({
       <body className="font-sans">
         <ThemeProvider defaultTheme="light" storageKey="dashboard-theme">
           <AuthProvider>{children}</AuthProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

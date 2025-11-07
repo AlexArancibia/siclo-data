@@ -5,28 +5,143 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
+} from "@/components/ui/pagination";
+import {
   Upload,
   FileSpreadsheet,
   CheckCircle,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { UploadedFiles } from "@/interfaces/file-type";
 import { useMappings } from "@/hooks/use-mappings";
 import { Mapping } from "@/interfaces/mapping";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
+import { toast } from "sonner";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ImportPage() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>({ class: null, payments: null });
-  const { reservationsMapping, fetchReservationsMapping, paymentMapping, fetchPaymentMapping, updateMapping } = useMappings();
+  const { 
+    reservationsMapping, 
+    fetchReservationsMapping, 
+    paymentMapping, 
+    fetchPaymentMapping, 
+    updateMapping,
+    importJobs,
+    fetchImportJobs
+  } = useMappings();
   const [mappingToUpdate, setMappingToUpdate] = useState<Mapping[]>([]);
   const [inputValues, setInputValues] = useState<{ [id: number]: string }>({});
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [appliedDateFrom, setAppliedDateFrom] = useState<string>("");
+  const [appliedDateTo, setAppliedDateTo] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(0);
+  const pageSize = 50;
 
   useEffect(() => {
     fetchReservationsMapping();
     fetchPaymentMapping();
+    
+    // Set default date range (last 3 months)
+    const today = new Date();
+    const threeMonthsAgo = new Date();
+    threeMonthsAgo.setMonth(today.getMonth() - 3);
+    
+    const formatDateForInput = (date: Date) => {
+      return date.toISOString().split('T')[0];
+    };
+    
+    const defaultFrom = formatDateForInput(threeMonthsAgo);
+    const defaultTo = formatDateForInput(today);
+    
+    setDateFrom(defaultFrom);
+    setDateTo(defaultTo);
+    setAppliedDateFrom(defaultFrom);
+    setAppliedDateTo(defaultTo);
+    
+    // Cargar datos iniciales con las fechas por defecto
+    fetchImportJobs(defaultFrom, defaultTo, 0, pageSize);
   }, []);
+
+  // Solo actualizar cuando cambia la página o las fechas aplicadas
+  useEffect(() => {
+    if (appliedDateFrom && appliedDateTo) {
+      fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, appliedDateFrom, appliedDateTo]);
+
+  const handleDateFilter = () => {
+    if (dateFrom && dateTo) {
+      // Validar que la fecha "desde" no sea mayor que la fecha "hasta"
+      if (new Date(dateFrom) > new Date(dateTo)) {
+        toast.error("La fecha 'desde' no puede ser mayor que la fecha 'hasta'");
+        return;
+      }
+      setAppliedDateFrom(dateFrom);
+      setAppliedDateTo(dateTo);
+      setCurrentPage(0);
+    } else {
+      toast.error("Por favor selecciona ambas fechas");
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    try {
+      // Parsear la fecha ISO (asume UTC si no tiene zona horaria)
+      const date = new Date(dateString);
+      
+      // Ajustar a la zona horaria de Perú (UTC-5)
+      // Restar 5 horas (5 * 60 * 60 * 1000 milisegundos)
+      const peruOffsetHours = -5;
+      const peruTime = new Date(date.getTime() + (peruOffsetHours * 60 * 60 * 1000));
+      
+      return format(peruTime, "dd MMM yyyy", { locale: es });
+    } catch {
+      return dateString;
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'SUCCESS':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'ERROR':
+        return <AlertCircle className="w-5 h-5 text-red-600" />;
+      case 'PENDING':
+      case 'PROCESSING':
+        return <AlertCircle className="w-5 h-5 text-yellow-600" />;
+      default:
+        return <AlertCircle className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case 'SUCCESS':
+        return 'Completado';
+      case 'ERROR':
+        return 'Error';
+      case 'PENDING':
+        return 'Pendiente';
+      case 'PROCESSING':
+        return 'Procesando';
+      default:
+        return status;
+    }
+  };
 
   const handleFileUpload = (type: keyof UploadedFiles, file: File | null) => {
     setUploadedFiles((prev) => ({
@@ -45,7 +160,13 @@ export default function ImportPage() {
     const formData = new FormData();
     formData.append("file", file);
 
+    const fileTypeName = type === "class" ? "clases" : "compras";
+
     try {
+      toast.loading(`Procesando archivo de ${fileTypeName}...`, {
+        id: "upload-file",
+      });
+
       const endpoint = type === "class"
         ? `${API_BASE_URL}/files/upload/reservations`
         : `${API_BASE_URL}/files/upload/payments`;
@@ -62,20 +183,54 @@ export default function ImportPage() {
 
       const result = await res.text();
       console.log(`File uploaded with: ${result}`);
+      
+      toast.success(`Archivo de ${fileTypeName} procesado correctamente`, {
+        id: "upload-file",
+      });
+
+      // Limpiar el archivo seleccionado después de procesarlo
+      setUploadedFiles((prev) => ({
+        ...prev,
+        [type]: null,
+      }));
+
+      // Refrescar el historial de importaciones con las fechas aplicadas
+      if (appliedDateFrom && appliedDateTo) {
+        fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
+      }
     } catch (err) {
       console.error(err);
+      toast.error(`Error al procesar el archivo de ${fileTypeName}`, {
+        id: "upload-file",
+      });
     }
   };
 
   const handleSaveChanges = async () => {
     if (mappingToUpdate.length === 0) {
-      console.log("No hay cambios que guardar");
+      toast.info("No hay cambios que guardar");
       return;
     }
-    await updateMapping(mappingToUpdate);
-    setMappingToUpdate([]);
-    setInputValues({});
-    await Promise.all([fetchReservationsMapping(), fetchPaymentMapping()]);
+
+    try {
+      toast.loading("Guardando cambios...", {
+        id: "save-changes",
+      });
+
+      await updateMapping(mappingToUpdate);
+      setMappingToUpdate([]);
+      setInputValues({});
+      await Promise.all([fetchReservationsMapping(), fetchPaymentMapping()]);
+      
+      toast.success("Cambios guardados correctamente", {
+        id: "save-changes",
+      });
+    } catch (err) {
+      console.error(err);
+      toast.error("Error al guardar los cambios", {
+        id: "save-changes",
+      });
+    }
   };
 
   const handleInputChange = (mappingId: number, newHeader: string, type: string) => {
@@ -305,41 +460,133 @@ export default function ImportPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-white border border-[#E5E7EB] rounded-lg">
-              <div className="flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-green-600" />
-                <div>
-                  <p className="text-sm font-medium text-[#1F2937]">
-                    clases_enero_2024.xlsx
-                  </p>
-                  <p className="text-xs text-[#6B7280]">
-                    Importado el 15 Ene 2024 - 1,247 registros
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                Ver Detalles
-              </Button>
+          {/* Date Filter */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 mb-6">
+            <div className="flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#6B7280]" />
+              <span className="text-sm text-[#6B7280]">Rango de fechas:</span>
             </div>
-
-            <div className="flex items-center justify-between p-3 bg-white border border-[#E5E7EB] rounded-lg">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-yellow-600" />
-                <div>
-                  <p className="text-sm font-medium text-[#1F2937]">
-                    compras_diciembre_2023.xlsx
-                  </p>
-                  <p className="text-xs text-[#6B7280]">
-                    Importado el 10 Ene 2024 - 892 registros (3 errores)
-                  </p>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                Ver Errores
+            <div className="flex items-center gap-2">
+              <Input
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className="w-[160px] h-9"
+              />
+              <span className="text-[#6B7280] text-sm">a</span>
+              <Input
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className="w-[160px] h-9"
+              />
+              <Button 
+                size="sm" 
+                className="h-9 px-4 bg-[#6366F1] hover:bg-[#5B5BD6]"
+                onClick={handleDateFilter}
+              >
+                Aplicar
               </Button>
             </div>
           </div>
+
+          {/* Import Jobs List */}
+          <div className="space-y-3 mb-6">
+            {importJobs?.data && importJobs.data.length > 0 ? (
+              importJobs.data.map((job) => (
+                <div
+                  key={job.jobId}
+                  className="flex items-center justify-between p-3 bg-white border border-[#E5E7EB] rounded-lg"
+                >
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(job.status)}
+                    <div>
+                      <p className="text-sm font-medium text-[#1F2937]">
+                        {job.fileName}
+                      </p>
+                      <p className="text-xs text-[#6B7280]">
+                        {job.finishedAt
+                          ? `Importado el ${formatDate(job.finishedAt)}`
+                          : job.createdAt
+                          ? `Subido el ${formatDate(job.createdAt)}`
+                          : "Fecha no disponible"}
+                        {job.processingResult && ` - ${job.processingResult.totalProcessed.toLocaleString()} registros procesados`}
+                        {job.processingResult && job.processingResult.failureCount > 0 && ` (${job.processingResult.failureCount} errores)`}
+                        {` - ${getStatusText(job.status)}`}
+                        {job.fileType && ` - ${job.fileType === 'PAYMENT' ? 'Compras' : 'Clases'}`}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-[#6B7280]">
+                No hay importaciones en el rango de fechas seleccionado
+              </div>
+            )}
+          </div>
+
+          {/* Pagination */}
+          {importJobs && importJobs.totalPages > 1 && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => {
+                      if (currentPage > 0) {
+                        setCurrentPage(currentPage - 1);
+                      }
+                    }}
+                    className={
+                      currentPage === 0
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
+                {Array.from({ length: importJobs.totalPages }, (_, i) => {
+                  if (
+                    i === 0 ||
+                    i === importJobs.totalPages - 1 ||
+                    (i >= currentPage - 1 && i <= currentPage + 1)
+                  ) {
+                    return (
+                      <PaginationItem key={i}>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(i)}
+                          isActive={currentPage === i}
+                          className="cursor-pointer"
+                        >
+                          {i + 1}
+                        </PaginationLink>
+                      </PaginationItem>
+                    );
+                  } else if (i === currentPage - 2 || i === currentPage + 2) {
+                    return (
+                      <PaginationItem key={i}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    );
+                  }
+                  return null;
+                })}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => {
+                      if (currentPage < importJobs.totalPages - 1) {
+                        setCurrentPage(currentPage + 1);
+                      }
+                    }}
+                    className={
+                      currentPage >= importJobs.totalPages - 1
+                        ? "pointer-events-none opacity-50"
+                        : "cursor-pointer"
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
         </CardContent>
       </Card>
     </div>
