@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import {
   Search,
-  Plus,
   Calendar,
   MapPin,
   ChevronLeft,
@@ -16,8 +15,13 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Users,
+  X,
 } from "lucide-react"
 import { useClassesView } from "@/hooks/use-classes-view"
+
+// Default dates for initial load
+const DEFAULT_DATE_FROM = '2025-07-07';
+const DEFAULT_DATE_TO = '2025-07-15';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -70,11 +74,11 @@ const getPaymentMethodBadge = (method: string) => {
 }
 
 export default function ClassesPage() {
-  const [searchTerm, setSearchTerm] = useState("")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [disciplineFilter, setDisciplineFilter] = useState("all")
+  const [instructorFilter, setInstructorFilter] = useState("")
+  const [clientFilter, setClientFilter] = useState("")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+  const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
     reservationsTable,
@@ -92,10 +96,39 @@ export default function ClassesPage() {
 
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
-      getReservationsTable('2025-07-07', '2025-07-15', 1, itemsPerPage)
+      // Use default dates if datepickers are empty
+      const from = dateFrom || DEFAULT_DATE_FROM;
+      const to = dateTo || DEFAULT_DATE_TO;
+      getReservationsTable(from, to, 0, itemsPerPage)
     })
     return () => cancelAnimationFrame(rafId)
   }, [])
+
+  const handleSearch = () => {
+    // Apply filters when search button is clicked
+    // Use default dates if datepickers are empty
+    const from = dateFrom || DEFAULT_DATE_FROM;
+    const to = dateTo || DEFAULT_DATE_TO;
+    const instructor = instructorFilter.trim() || undefined;
+    const client = clientFilter.trim() || undefined;
+    
+    // Check if any filters are actually being applied
+    const hasFilters = instructor !== undefined || client !== undefined || dateFrom !== "" || dateTo !== "";
+    setHasAppliedFilters(hasFilters);
+    
+    getReservationsTable(from, to, 0, itemsPerPage, instructor, client);
+  }
+
+  const handleClear = () => {
+    // Clear all filters and reset to initial state
+    setInstructorFilter("");
+    setClientFilter("");
+    setDateFrom("");
+    setDateTo("");
+    setHasAppliedFilters(false);
+    // Reload with default dates and no filters
+    getReservationsTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);
+  }
 
   const endIndex = Math.max(startIndex - 1 + (visibleReservations.length), 0)
 
@@ -112,10 +145,6 @@ export default function ClassesPage() {
           <h2 className="text-3xl font-bold text-gray-900">Clases</h2>
           <p className="text-gray-600 mt-1">Gestiona las reservas y horarios de clases</p>
         </div>
-        <Button className="flex items-center gap-2">
-          <Plus className="w-4 h-4" />
-          Nueva Clase
-        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -169,35 +198,58 @@ export default function ClassesPage() {
           <CardTitle>Lista de Clases</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input
-                placeholder="Buscar..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-full"
-              />
-            </div>
+          <div className="flex flex-col gap-4 mb-6">
             <div className="flex flex-col sm:flex-row gap-4">
+              <div className="relative flex-1">
+                <Input
+                  placeholder="Filtrar por instructor"
+                  value={instructorFilter}
+                  onChange={(e) => setInstructorFilter(e.target.value)}
+                  className="w-full"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                />
+              </div>
+              <div className="relative flex-1">
+                <Input
+                  placeholder="Filtrar por cliente (email)"
+                  value={clientFilter}
+                  onChange={(e) => setClientFilter(e.target.value)}
+                  className="w-full"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleSearch();
+                    }
+                  }}
+                />
+              </div>
               <Input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
                 placeholder="Desde"
-                className="flex-1"
+                className="w-full sm:w-40"
               />
               <Input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
                 placeholder="Hasta"
-                className="flex-1"
+                className="w-full sm:w-40"
               />
-              <Button onClick={() => {}} className="w-full sm:w-auto">
+              <Button onClick={handleSearch} className="w-full sm:w-auto">
                 <Search className="w-4 h-4 mr-2" />
                 Buscar
               </Button>
+              {hasAppliedFilters && (
+                <Button onClick={handleClear} variant="outline" className="w-full sm:w-auto">
+                  <X className="w-4 h-4 mr-2" />
+                  Limpiar
+                </Button>
+              )}
             </div>
           </div>
 
@@ -282,7 +334,7 @@ export default function ClassesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goFirst}
-                  disabled={(reservationsTable?.page ?? 1) === 1}
+                  disabled={(reservationsTable?.page ?? 0) === 0}
                   title="Primera página"
                 >
                   <ChevronsLeft className="w-4 h-4" />
@@ -291,7 +343,7 @@ export default function ClassesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goPrev}
-                  disabled={(reservationsTable?.page ?? 1) === 1}
+                  disabled={(reservationsTable?.page ?? 0) === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
                   Anterior
@@ -300,7 +352,7 @@ export default function ClassesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goNext}
-                  disabled={(reservationsTable?.page ?? 1) >= (reservationsTable?.totalPages ?? 1)}
+                  disabled={(reservationsTable?.page ?? 0) + 1 >= (reservationsTable?.totalPages ?? 1)}
                 >
                   Siguiente
                   <ChevronRight className="w-4 h-4" />
@@ -309,7 +361,7 @@ export default function ClassesPage() {
                   variant="outline"
                   size="sm"
                   onClick={goLast}
-                  disabled={(reservationsTable?.page ?? 1) >= (reservationsTable?.totalPages ?? 1)}
+                  disabled={(reservationsTable?.page ?? 0) + 1 >= (reservationsTable?.totalPages ?? 1)}
                   title="Última página"
                 >
                   <ChevronsRight className="w-4 h-4" />
