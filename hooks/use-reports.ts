@@ -21,13 +21,13 @@ export function useReports(): UseReportsResult {
       if (!token) throw new Error("No hay token, inicia sesión");
 
       const [resStudio, resInstructor, resDiscipline] = await Promise.all([
-        fetch(`${API_BASE_URL}/reports/reservations?groupBy=studio&from=${from}&to=${to}`, {
+        fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=studio&from=${from}&to=${to}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/reports/reservations?groupBy=instructor&from=${from}&to=${to}`, {
+        fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=instructor&from=${from}&to=${to}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
-        fetch(`${API_BASE_URL}/reports/reservations?groupBy=discipline&from=${from}&to=${to}`, {
+        fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=discipline&from=${from}&to=${to}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
