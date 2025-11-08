@@ -21,6 +21,27 @@ import { useClientsView } from "@/hooks/use-clients-view"
 const DEFAULT_DATE_FROM = '2025-07-07';
 const DEFAULT_DATE_TO = '2025-07-20';
 
+// Helper function to format date without UTC timezone issues
+const formatDateString = (dateString: string | null): string => {
+  if (!dateString) return '-';
+  
+  // Parse the date string directly to avoid UTC timezone issues
+  // Format: "YYYY-MM-DD" or "YYYY-M-D"
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    const year = parts[0];
+    const month = parts[1].padStart(2, '0');
+    const day = parts[2].padStart(2, '0');
+    
+    // Create date in local timezone to avoid UTC conversion
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    return date.toLocaleDateString("es-ES");
+  }
+  
+  // Fallback to original method if format is unexpected
+  return new Date(dateString).toLocaleDateString("es-ES");
+};
+
 export default function ClientsPage() {
   const [clientEmail, setClientEmail] = useState("")
   const [dateFrom, setDateFrom] = useState("")
@@ -175,12 +196,12 @@ export default function ClientsPage() {
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {client.lastReservationDate ? new Date(client.lastReservationDate).toLocaleDateString("es-ES") : '-'}
+                        {formatDateString(client.lastReservationDate)}
                       </div>
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        {client.lastPaymentDate ? new Date(client.lastPaymentDate).toLocaleDateString("es-ES") : '-'}
+                        {formatDateString(client.lastPaymentDate)}
                       </div>
                     </TableCell>
                     <TableCell>
