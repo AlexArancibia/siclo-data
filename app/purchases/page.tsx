@@ -75,6 +75,8 @@ export default function PurchasesPage() {
     goPrev,
     goNext,
     goLast,
+    paymentMethods,
+    getPaymentMethods
   } = usePaymentsView();
 
   useEffect(() => {
@@ -83,6 +85,7 @@ export default function PurchasesPage() {
       const from = dateFrom || DEFAULT_DATE_FROM;
       const to = dateTo || DEFAULT_DATE_TO;
       getPaymentTable(from, to, 0, itemsPerPage)
+      getPaymentMethods()
     })
     return () => cancelAnimationFrame(rafId)
   }, [])
@@ -120,6 +123,12 @@ export default function PurchasesPage() {
   const approvedTransactions = paymentsTable?.summary.operationSummary.approved ?? 0
   const pendingTransactions = Math.max(0, totalTransactions - approvedTransactions)
   const totalRevenue = paymentsTable?.summary.totalAmountReceived ?? 0
+
+  const paymentMethodLabels: Record<string, string> = {
+  credit_card: "Tarjeta Crédito",
+  debit_card: "Tarjeta Débito",
+  cash: "Efectivo",
+};
 
   return (
     <div className="space-y-6">
@@ -213,17 +222,21 @@ export default function PurchasesPage() {
               />
             </div>
 
-            <Select value={paymentTypeFilter} onValueChange={setPaymentTypeFilter}>
-              <SelectTrigger className="w-full sm:w-44">
-                <SelectValue placeholder="Tipo de Tarjeta" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos</SelectItem>
-                <SelectItem value="credit_card">Tarjeta Crédito</SelectItem>
-                <SelectItem value="debit_card">Tarjeta Débito</SelectItem>
-                <SelectItem value="cash">Efectivo</SelectItem>
-              </SelectContent>
-            </Select>
+           <Select value={paymentTypeFilter} onValueChange={setPaymentTypeFilter}>
+            <SelectTrigger className="w-full sm:w-44">
+              <SelectValue placeholder="Tipo de Tarjeta" />
+            </SelectTrigger>
+
+            <SelectContent>
+              <SelectItem value="all">Todos</SelectItem>
+
+              {paymentMethods.map((method) => (
+                <SelectItem key={method.paymentMethod} value={method.paymentMethod}>
+                  {paymentMethodLabels[method.paymentMethod] || method.paymentMethod}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
             <Input
               type="date"

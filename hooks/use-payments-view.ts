@@ -17,6 +17,7 @@ export function usePaymentsView() {
     dateStart: '2025-07-07',
     dateEnd: '2025-07-11',
   });
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([]);
   const itemsPerPage = 10;
 
   const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
@@ -63,6 +64,20 @@ export function usePaymentsView() {
       console.log(err.message);
     }
   };
+
+  const getPaymentMethods = async () => {
+    try {
+      if (!token) throw new Error("No hay token, inicia sesión");
+      const res = await fetch(`${API_BASE_URL}/reports/payments/payment-methods/summary`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Error al obtener pagos");
+      const data = await res.json();
+      setPaymentMethods(data);
+    } catch (error) {
+      console.log(error);
+    }
+  }
 
   const visiblePurchases = paymentsTable?.data ?? [];
   const startIndex = ((paymentsTable?.page ?? 0) * (paymentsTable?.size ?? itemsPerPage)) + 1;
@@ -132,10 +147,12 @@ export function usePaymentsView() {
     totalDisplay,
     currentPage,
     itemsPerPage,
+    paymentMethods,
     getPaymentTable,
     goFirst,
     goPrev,
     goNext,
     goLast,
+    getPaymentMethods
   };
 }
