@@ -17,9 +17,9 @@ import {
 import Link from "next/link"
 import { useClientsView } from "@/hooks/use-clients-view"
 
-// Default dates for initial load
-const DEFAULT_DATE_FROM = '2025-07-07';
-const DEFAULT_DATE_TO = '2025-07-20';
+// Default dates for initial load: del 1 al 31 de julio
+const DEFAULT_DATE_FROM = '2025-07-01';
+const DEFAULT_DATE_TO = '2025-07-31';
 
 // Helper function to format date without UTC timezone issues
 const formatDateString = (dateString: string | null): string => {
@@ -44,8 +44,8 @@ const formatDateString = (dateString: string | null): string => {
 
 export default function ClientsPage() {
   const [clientEmail, setClientEmail] = useState("")
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
+  const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM)
+  const [dateTo, setDateTo] = useState(DEFAULT_DATE_TO)
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
@@ -79,8 +79,8 @@ export default function ClientsPage() {
     const to = dateTo || DEFAULT_DATE_TO;
     const client = clientEmail.trim() || undefined;
     
-    // Check if any filters are actually being applied
-    const hasFilters = client !== undefined || dateFrom !== "" || dateTo !== "";
+    // Check if any filters are actually being applied (dates different from defaults or other filters)
+    const hasFilters = client !== undefined || dateFrom !== DEFAULT_DATE_FROM || dateTo !== DEFAULT_DATE_TO;
     setHasAppliedFilters(hasFilters);
     
     getClientsTable(from, to, 0, itemsPerPage, client);
@@ -89,8 +89,8 @@ export default function ClientsPage() {
   const handleClear = () => {
     // Clear all filters and reset to initial state
     setClientEmail("");
-    setDateFrom("");
-    setDateTo("");
+    setDateFrom(DEFAULT_DATE_FROM);
+    setDateTo(DEFAULT_DATE_TO);
     setHasAppliedFilters(false);
     // Reload with default dates and no filters
     getClientsTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);

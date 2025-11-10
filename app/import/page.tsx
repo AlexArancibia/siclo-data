@@ -54,17 +54,9 @@ export default function ImportPage() {
     fetchReservationsMapping();
     fetchPaymentMapping();
     
-    // Set default date range (last 3 months)
-    const today = new Date();
-    const threeMonthsAgo = new Date();
-    threeMonthsAgo.setMonth(today.getMonth() - 3);
-    
-    const formatDateForInput = (date: Date) => {
-      return date.toISOString().split('T')[0];
-    };
-    
-    const defaultFrom = formatDateForInput(threeMonthsAgo);
-    const defaultTo = formatDateForInput(today);
+    // Set default date range: del 1 al 31 de julio
+    const defaultFrom = '2025-07-01';
+    const defaultTo = '2025-07-31';
     
     setDateFrom(defaultFrom);
     setDateTo(defaultTo);

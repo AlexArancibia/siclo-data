@@ -180,25 +180,62 @@ const instructoresTop = [
 ]
 
 
-const colors = [
-  { stroke: "#FF6B6B", fill: "url(#colorMiraflores)" },
-  { stroke: "#4ECDC4", fill: "url(#colorSanIsidro)" },
-  { stroke: "#45B7D1", fill: "url(#colorSurco)" },
-  { stroke: "#96CEB4", fill: "url(#colorLimaCentro)" },
+const colorPalette = [
+  "#FF6B6B",   // Rojo
+  "#4ECDC4",   // Turquesa
+  "#45B7D1",   // Azul claro
+  "#96CEB4",   // Verde menta
+  "#FFA07A",   // Salmón
+  "#9370DB",   // Púrpura
+  "#20B2AA",   // Verde azulado
+  "#FFD700",   // Dorado
+  "#FF6347",   // Tomate
+  "#40E0D0",   // Turquesa claro
+  "#EE82EE",   // Violeta
+  "#32CD32",   // Verde lima
+  "#FF1493",   // Rosa profundo
+  "#00CED1",   // Turquesa oscuro
+  "#FF8C00",   // Naranja oscuro
+  "#8A2BE2",   // Azul violeta
 ];
+
+// Paleta de colores más diversa específica para instructores
+const instructorColorPalette = [
+  "#E74C3C",   // Rojo intenso
+  "#3498DB",   // Azul brillante
+  "#2ECC71",   // Verde esmeralda
+  "#F39C12",   // Naranja
+  "#9B59B6",   // Púrpura
+  "#1ABC9C",   // Turquesa
+  "#E67E22",   // Naranja oscuro
+  "#34495E",   // Gris azulado
+  "#E91E63",   // Rosa
+  "#00BCD4",   // Cian
+  "#FF9800",   // Naranja vibrante
+  "#673AB7",   // Púrpura profundo
+  "#009688",   // Verde azulado
+  "#FF5722",   // Rojo anaranjado
+  "#3F51B5",   // Azul índigo
+  "#795548",   // Marrón
+  "#CDDC39",   // Lima
+  "#FFC107",   // Ámbar
+  "#FF4081",   // Rosa vibrante
+  "#00E676",   // Verde neón
+];
+
 
 export default function AnalyticsPage() {
   const [currentPageVIP, setCurrentPageVIP] = useState(1)
   const [currentPageInactivos, setCurrentPageInactivos] = useState(1)
   const [currentPageInstructores, setCurrentPageInstructores] = useState(1)
 
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  // Fechas por defecto: del 1 al 31 de julio
+  const DEFAULT_START_DATE = "2025-07-01";
+  const DEFAULT_END_DATE = "2025-07-31";
+  
+  const [startDate, setStartDate] = useState(DEFAULT_START_DATE);
+  const [endDate, setEndDate] = useState(DEFAULT_END_DATE);
   const { dataStudio, dataInstructor, dataDiscipline, topDisciplines, paymentMethods, loading, error, fetchReports } = useReports();
-
-  // Fechas por defecto para la carga inicial (no se muestran en el datepicker)
-  const DEFAULT_START_DATE = "2025-07-07";
-  const DEFAULT_END_DATE = "2025-07-20";
 
   useEffect(() => {
     // Ejecutar fetch con fechas por defecto al cargar la página
@@ -209,9 +246,13 @@ export default function AnalyticsPage() {
   const dataDisciplineChart = dataDiscipline ? transformReportResponse(dataDiscipline) : [];
   const dataInstructorChart = dataInstructor ? transformReportResponse(dataInstructor) : [];
 
-  const { hidden: hiddenStudio, legendItems: legendStudioItems, visibleItems: visibleStudioItems, handleLegendClick: handleStudioLegend } = useChartLegend(dataStudioChart, colors);
-  const { hidden: hiddenDiscipline, legendItems: legendDisciplineItems, visibleItems: visibleDisciplineItems, handleLegendClick: handleDisciplineLegend } = useChartLegend(dataDisciplineChart, colors);
-  const { hidden: hiddenInstructor, legendItems: legendInstructorItems, visibleItems: visibleInstructorItems, handleLegendClick: handleInstructorLegend } = useChartLegend(dataInstructorChart, colors, true);
+  // Create colors array for useChartLegend hook
+  const colorsForLegend = colorPalette.map((color) => ({ stroke: color }));
+  const instructorColorsForLegend = instructorColorPalette.map((color) => ({ stroke: color }));
+  
+  const { hidden: hiddenStudio, legendItems: legendStudioItems, visibleItems: visibleStudioItems, handleLegendClick: handleStudioLegend } = useChartLegend(dataStudioChart, colorsForLegend);
+  const { hidden: hiddenDiscipline, legendItems: legendDisciplineItems, visibleItems: visibleDisciplineItems, handleLegendClick: handleDisciplineLegend } = useChartLegend(dataDisciplineChart, colorsForLegend);
+  const { hidden: hiddenInstructor, legendItems: legendInstructorItems, visibleItems: visibleInstructorItems, handleLegendClick: handleInstructorLegend } = useChartLegend(dataInstructorChart, instructorColorsForLegend, true);
 
   const itemsPerPage = 3;
 
@@ -406,22 +447,12 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={dataStudioChart}>
                     <defs>
-                      <linearGradient id="colorMiraflores" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#FF6B6B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#FF6B6B" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorSanIsidro" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#4ECDC4" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#4ECDC4" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorSurco" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#45B7D1" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#45B7D1" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorLimaCentro" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#96CEB4" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#96CEB4" stopOpacity={0} />
-                      </linearGradient>
+                      {colorPalette.map((color, index) => (
+                        <linearGradient key={`studio-gradient-${index}`} id={`studio-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={color} stopOpacity={0} />
+                        </linearGradient>
+                      ))}
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                     <XAxis 
@@ -444,9 +475,9 @@ export default function AnalyticsPage() {
                         key={key}
                         type="monotone"
                         dataKey={key}
-                        stroke={colors[index % colors.length].stroke}
+                        stroke={colorPalette[index % colorPalette.length]}
                         fillOpacity={1}
-                        fill={colors[index % colors.length].fill}
+                        fill={`url(#studio-color${(index % colorPalette.length) + 1})`}
                         strokeWidth={2}
                         dot={false}
                         name={key}
@@ -474,14 +505,12 @@ export default function AnalyticsPage() {
                 <ResponsiveContainer width="100%" height={300}>
                   <AreaChart data={dataDisciplineChart}>
                     <defs>
-                      <linearGradient id="colorConfirmadas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient id="colorCanceladas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                      </linearGradient>
+                      {colorPalette.map((color, index) => (
+                        <linearGradient key={`discipline-gradient-${index}`} id={`discipline-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={color} stopOpacity={0} />
+                        </linearGradient>
+                      ))}
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                     <XAxis 
@@ -501,9 +530,9 @@ export default function AnalyticsPage() {
                         key={key}
                         type="monotone"
                         dataKey={key}
-                        stroke={colors[index % colors.length].stroke}
+                        stroke={colorPalette[index % colorPalette.length]}
                         fillOpacity={1}
-                        fill={colors[index % colors.length].fill}
+                        fill={`url(#discipline-color${(index % colorPalette.length) + 1})`}
                         strokeWidth={2}
                         dot={false}
                         name={key}
@@ -532,18 +561,12 @@ export default function AnalyticsPage() {
               <ResponsiveContainer width="100%" height={300}>
                 <AreaChart data={dataInstructorChart}>
                   <defs>
-                    <linearGradient id="colorAprobadas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorPendientes" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#F59E0B" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="colorRechazadas" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                    </linearGradient>
+                    {instructorColorPalette.map((color, index) => (
+                      <linearGradient key={`instructor-gradient-${index}`} id={`instructor-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                        <stop offset="95%" stopColor={color} stopOpacity={0} />
+                      </linearGradient>
+                    ))}
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
                   <XAxis 
@@ -563,9 +586,9 @@ export default function AnalyticsPage() {
                         key={key}
                         type="monotone"
                         dataKey={key}
-                        stroke={colors[index % colors.length].stroke}
+                        stroke={instructorColorPalette[index % instructorColorPalette.length]}
                         fillOpacity={1}
-                        fill={colors[index % colors.length].fill}
+                        fill={`url(#instructor-color${(index % instructorColorPalette.length) + 1})`}
                         strokeWidth={2}
                         dot={false}
                         name={key}

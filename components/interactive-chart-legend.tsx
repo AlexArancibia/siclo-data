@@ -58,6 +58,7 @@ export function InteractiveChartLegend({ category, items, visibleItems, onToggle
                   key={item.key}
                   checked={visibleItems.has(item.key)}
                   onCheckedChange={() => onToggle(item.key)}
+                  onSelect={(e) => e.preventDefault()}
                   className="cursor-pointer"
                 >
                   <div className="flex items-center gap-2">

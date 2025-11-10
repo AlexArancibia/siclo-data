@@ -28,13 +28,13 @@ import { Client } from "@/interfaces/client-table"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// Default dates for reservations
-const DEFAULT_RESERVATIONS_DATE_FROM = '2025-07-07';
-const DEFAULT_RESERVATIONS_DATE_TO = '2025-07-20';
+// Default dates for reservations: del 1 al 31 de julio
+const DEFAULT_RESERVATIONS_DATE_FROM = '2025-07-01';
+const DEFAULT_RESERVATIONS_DATE_TO = '2025-07-31';
 
-// Default dates for payments
-const DEFAULT_PAYMENTS_DATE_FROM = '2025-01-01';
-const DEFAULT_PAYMENTS_DATE_TO = '2025-09-20';
+// Default dates for payments: del 1 al 31 de julio
+const DEFAULT_PAYMENTS_DATE_FROM = '2025-07-01';
+const DEFAULT_PAYMENTS_DATE_TO = '2025-07-31';
 
 // Helper function to format date without UTC timezone issues
 const formatDateString = (dateString: string | null): string => {
@@ -92,13 +92,13 @@ export default function ClientDetailPage() {
   const [loading, setLoading] = useState(true)
 
   // Reservations state
-  const [reservationsDateFrom, setReservationsDateFrom] = useState("")
-  const [reservationsDateTo, setReservationsDateTo] = useState("")
+  const [reservationsDateFrom, setReservationsDateFrom] = useState(DEFAULT_RESERVATIONS_DATE_FROM)
+  const [reservationsDateTo, setReservationsDateTo] = useState(DEFAULT_RESERVATIONS_DATE_TO)
   const [hasAppliedReservationsFilters, setHasAppliedReservationsFilters] = useState(false)
 
   // Payments state
-  const [paymentsDateFrom, setPaymentsDateFrom] = useState("")
-  const [paymentsDateTo, setPaymentsDateTo] = useState("")
+  const [paymentsDateFrom, setPaymentsDateFrom] = useState(DEFAULT_PAYMENTS_DATE_FROM)
+  const [paymentsDateTo, setPaymentsDateTo] = useState(DEFAULT_PAYMENTS_DATE_TO)
   const [hasAppliedPaymentsFilters, setHasAppliedPaymentsFilters] = useState(false)
 
   const {
@@ -189,14 +189,14 @@ export default function ClientDetailPage() {
   const handleReservationsSearch = () => {
     const from = reservationsDateFrom || DEFAULT_RESERVATIONS_DATE_FROM;
     const to = reservationsDateTo || DEFAULT_RESERVATIONS_DATE_TO;
-    const hasFilters = reservationsDateFrom !== "" || reservationsDateTo !== "";
+    const hasFilters = reservationsDateFrom !== DEFAULT_RESERVATIONS_DATE_FROM || reservationsDateTo !== DEFAULT_RESERVATIONS_DATE_TO;
     setHasAppliedReservationsFilters(hasFilters);
     getClientReservations(from, to, 0, reservationsItemsPerPage);
   }
 
   const handleReservationsClear = () => {
-    setReservationsDateFrom("");
-    setReservationsDateTo("");
+    setReservationsDateFrom(DEFAULT_RESERVATIONS_DATE_FROM);
+    setReservationsDateTo(DEFAULT_RESERVATIONS_DATE_TO);
     setHasAppliedReservationsFilters(false);
     getClientReservations(DEFAULT_RESERVATIONS_DATE_FROM, DEFAULT_RESERVATIONS_DATE_TO, 0, reservationsItemsPerPage);
   }
@@ -204,14 +204,14 @@ export default function ClientDetailPage() {
   const handlePaymentsSearch = () => {
     const from = paymentsDateFrom || DEFAULT_PAYMENTS_DATE_FROM;
     const to = paymentsDateTo || DEFAULT_PAYMENTS_DATE_TO;
-    const hasFilters = paymentsDateFrom !== "" || paymentsDateTo !== "";
+    const hasFilters = paymentsDateFrom !== DEFAULT_PAYMENTS_DATE_FROM || paymentsDateTo !== DEFAULT_PAYMENTS_DATE_TO;
     setHasAppliedPaymentsFilters(hasFilters);
     getClientPayments(from, to, 0, paymentsItemsPerPage);
   }
 
   const handlePaymentsClear = () => {
-    setPaymentsDateFrom("");
-    setPaymentsDateTo("");
+    setPaymentsDateFrom(DEFAULT_PAYMENTS_DATE_FROM);
+    setPaymentsDateTo(DEFAULT_PAYMENTS_DATE_TO);
     setHasAppliedPaymentsFilters(false);
     getClientPayments(DEFAULT_PAYMENTS_DATE_FROM, DEFAULT_PAYMENTS_DATE_TO, 0, paymentsItemsPerPage);
   }

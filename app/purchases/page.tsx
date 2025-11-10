@@ -52,15 +52,15 @@ const getPaymentTypeBadge = (paymentType: string) => {
   }
 }
 
-// Default dates for initial load
-const DEFAULT_DATE_FROM = '2025-07-07';
-const DEFAULT_DATE_TO = '2025-07-11';
+// Default dates for initial load: del 1 al 31 de julio
+const DEFAULT_DATE_FROM = '2025-07-01';
+const DEFAULT_DATE_TO = '2025-07-31';
 
 export default function PurchasesPage() {
   const [clientEmail, setClientEmail] = useState("")
   const [paymentTypeFilter, setPaymentTypeFilter] = useState("all")
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
+  const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM)
+  const [dateTo, setDateTo] = useState(DEFAULT_DATE_TO)
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
@@ -98,8 +98,8 @@ export default function PurchasesPage() {
     const client = clientEmail.trim() || undefined;
     const payment = paymentTypeFilter !== 'all' ? paymentTypeFilter : undefined;
     
-    // Check if any filters are actually being applied
-    const hasFilters = client !== undefined || payment !== undefined || dateFrom !== "" || dateTo !== "";
+    // Check if any filters are actually being applied (dates different from defaults or other filters)
+    const hasFilters = client !== undefined || payment !== undefined || dateFrom !== DEFAULT_DATE_FROM || dateTo !== DEFAULT_DATE_TO;
     setHasAppliedFilters(hasFilters);
     
     getPaymentTable(from, to, 0, itemsPerPage, client, payment);
@@ -109,8 +109,8 @@ export default function PurchasesPage() {
     // Clear all filters and reset to initial state
     setClientEmail("");
     setPaymentTypeFilter("all");
-    setDateFrom("");
-    setDateTo("");
+    setDateFrom(DEFAULT_DATE_FROM);
+    setDateTo(DEFAULT_DATE_TO);
     setHasAppliedFilters(false);
     // Reload with default dates and no filters
     getPaymentTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);

@@ -19,9 +19,9 @@ import {
 } from "lucide-react"
 import { useClassesView } from "@/hooks/use-classes-view"
 
-// Default dates for initial load
-const DEFAULT_DATE_FROM = '2025-07-07';
-const DEFAULT_DATE_TO = '2025-07-15';
+// Default dates for initial load: del 1 al 31 de julio
+const DEFAULT_DATE_FROM = '2025-07-01';
+const DEFAULT_DATE_TO = '2025-07-31';
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -76,8 +76,8 @@ const getPaymentMethodBadge = (method: string) => {
 export default function ClassesPage() {
   const [instructorFilter, setInstructorFilter] = useState("")
   const [clientFilter, setClientFilter] = useState("")
-  const [dateFrom, setDateFrom] = useState("")
-  const [dateTo, setDateTo] = useState("")
+  const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM)
+  const [dateTo, setDateTo] = useState(DEFAULT_DATE_TO)
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
@@ -112,8 +112,8 @@ export default function ClassesPage() {
     const instructor = instructorFilter.trim() || undefined;
     const client = clientFilter.trim() || undefined;
     
-    // Check if any filters are actually being applied
-    const hasFilters = instructor !== undefined || client !== undefined || dateFrom !== "" || dateTo !== "";
+    // Check if any filters are actually being applied (dates different from defaults or other filters)
+    const hasFilters = instructor !== undefined || client !== undefined || dateFrom !== DEFAULT_DATE_FROM || dateTo !== DEFAULT_DATE_TO;
     setHasAppliedFilters(hasFilters);
     
     getReservationsTable(from, to, 0, itemsPerPage, instructor, client);
@@ -123,8 +123,8 @@ export default function ClassesPage() {
     // Clear all filters and reset to initial state
     setInstructorFilter("");
     setClientFilter("");
-    setDateFrom("");
-    setDateTo("");
+    setDateFrom(DEFAULT_DATE_FROM);
+    setDateTo(DEFAULT_DATE_TO);
     setHasAppliedFilters(false);
     // Reload with default dates and no filters
     getReservationsTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);
