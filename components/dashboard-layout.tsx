@@ -46,9 +46,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="p-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <span className="text-primary-foreground font-semibold text-sm">D</span>
+              <span className="text-primary-foreground font-semibold text-sm">S</span>
             </div>
-            <span className="font-semibold text-lg text-sidebar-foreground">Dabang</span>
+            <span className="font-semibold text-lg text-sidebar-foreground">Siclo Data</span>
           </div>
         </div>
 
