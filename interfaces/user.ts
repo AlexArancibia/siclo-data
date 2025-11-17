@@ -8,4 +8,5 @@ export interface User {
   lastName: string;
   roles?: Role[];
   isActive?: boolean;
+  password?: string;
 }

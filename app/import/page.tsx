@@ -27,15 +27,18 @@ import { Mapping } from "@/interfaces/mapping";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
+import { getDefaultMonthDateRange } from "@/lib/format-date";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function ImportPage() {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFiles>({ class: null, payments: null });
   const { 
-    reservationsMapping, 
+    reservationsMapping,
+    setReservationsMapping,
     fetchReservationsMapping, 
-    paymentMapping, 
+    paymentMapping,
+    setPaymentMapping,
     fetchPaymentMapping, 
     updateMapping,
     importJobs,
@@ -48,46 +51,43 @@ export default function ImportPage() {
   const [appliedDateFrom, setAppliedDateFrom] = useState<string>("");
   const [appliedDateTo, setAppliedDateTo] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(0);
+  const [filterTrigger, setFilterTrigger] = useState(0);
   const pageSize = 50;
 
   useEffect(() => {
     fetchReservationsMapping();
     fetchPaymentMapping();
     
-    // Set default date range: del 1 al 31 de julio
-    const defaultFrom = '2025-07-01';
-    const defaultTo = '2025-07-31';
+    const { from, to } = getDefaultMonthDateRange();
     
-    setDateFrom(defaultFrom);
-    setDateTo(defaultTo);
-    setAppliedDateFrom(defaultFrom);
-    setAppliedDateTo(defaultTo);
-    
+    setDateFrom(from);
+    setDateTo(to);
+    setAppliedDateFrom(from);
+    setAppliedDateTo(to);
     // Cargar datos iniciales con las fechas por defecto
-    fetchImportJobs(defaultFrom, defaultTo, 0, pageSize);
+    fetchImportJobs(from, to, 0, pageSize);
   }, []);
 
   // Solo actualizar cuando cambia la página o las fechas aplicadas
   useEffect(() => {
     if (appliedDateFrom && appliedDateTo) {
+      console.log('appliedDateFrom', appliedDateFrom);
+      console.log('appliedDateTo', appliedDateTo);
       fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, appliedDateFrom, appliedDateTo]);
+  }, [currentPage, appliedDateFrom, appliedDateTo, filterTrigger]);
 
   const handleDateFilter = () => {
-    if (dateFrom && dateTo) {
-      // Validar que la fecha "desde" no sea mayor que la fecha "hasta"
-      if (new Date(dateFrom) > new Date(dateTo)) {
-        toast.error("La fecha 'desde' no puede ser mayor que la fecha 'hasta'");
-        return;
-      }
-      setAppliedDateFrom(dateFrom);
-      setAppliedDateTo(dateTo);
-      setCurrentPage(0);
-    } else {
-      toast.error("Por favor selecciona ambas fechas");
+    // Validar que la fecha "desde" no sea mayor que la fecha "hasta"
+    if (new Date(dateFrom) > new Date(dateTo)) {
+      toast.error("La fecha 'desde' no puede ser mayor que la fecha 'hasta'");
+      return;
     }
+    setAppliedDateFrom(dateFrom);
+    setAppliedDateTo(dateTo);
+    setCurrentPage(0);
+    setFilterTrigger(prev => prev + 1);
   };
 
   const formatDate = (dateString: string) => {
@@ -154,47 +154,40 @@ export default function ImportPage() {
 
     const fileTypeName = type === "class" ? "clases" : "compras";
 
-    try {
-      toast.loading(`Procesando archivo de ${fileTypeName}...`, {
-        id: "upload-file",
-      });
+    toast.loading(`Procesando archivo de ${fileTypeName}...`, {
+      id: "upload-file",
+    });
 
-      const endpoint = type === "class"
-        ? `${API_BASE_URL}/files/upload/reservations`
-        : `${API_BASE_URL}/files/upload/payments`;
+    const endpoint = type === "class"
+      ? `${API_BASE_URL}/files/upload/reservations`
+      : `${API_BASE_URL}/files/upload/payments`;
 
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: formData,
-      });
+    const res = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
 
-      if (!res.ok) throw new Error("Error en el POST");
+    if (!res.ok) throw new Error("Error en el POST");
 
-      const result = await res.text();
-      console.log(`File uploaded with: ${result}`);
-      
-      toast.success(`Archivo de ${fileTypeName} procesado correctamente`, {
-        id: "upload-file",
-      });
+    const result = await res.text();
+    console.log(`File uploaded with: ${result}`);
+    
+    toast.success(`Archivo de ${fileTypeName} procesado correctamente`, {
+      id: "upload-file",
+    });
 
-      // Limpiar el archivo seleccionado después de procesarlo
-      setUploadedFiles((prev) => ({
-        ...prev,
-        [type]: null,
-      }));
+    // Limpiar el archivo seleccionado después de procesarlo
+    setUploadedFiles((prev) => ({
+      ...prev,
+      [type]: null,
+    }));
 
-      // Refrescar el historial de importaciones con las fechas aplicadas
-      if (appliedDateFrom && appliedDateTo) {
-        fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error(`Error al procesar el archivo de ${fileTypeName}`, {
-        id: "upload-file",
-      });
+    // Refrescar el historial de importaciones con las fechas aplicadas
+    if (appliedDateFrom && appliedDateTo) {
+      fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
     }
   };
 
@@ -244,6 +237,26 @@ export default function ImportPage() {
         return [...prev, { ...base, excelHeader: newHeader }];
       }
     });
+  };
+
+  const handleRequiredChange = (mappingId: number, value: boolean, type: string) => {
+    if (type === 'reservations') {
+      setReservationsMapping(prev =>
+        prev.map(item =>
+          item.mappingId === mappingId
+            ? { ...item, required: value }
+            : item
+        )
+      );
+    } else {
+      setPaymentMapping(prev =>
+        prev.map(item =>
+          item.mappingId === mappingId
+            ? { ...item, required: value }
+            : item
+        )
+      );
+    }
   };
 
   return (
@@ -323,10 +336,13 @@ export default function ImportPage() {
             </Card>
 
             <Card className="bg-[#F8FAFC] shadow-sm border border-[#E5E7EB]">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-semibold text-[#1F2937]">
                   Formato Requerido - Clases
                 </CardTitle>
+                <p className="text-sm text-[#6B7280] font-medium mt-1">
+                  Recordar que se pueden tener múltiples campos separados por punto y coma (;).
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
@@ -336,8 +352,20 @@ export default function ImportPage() {
                   <ul className="space-y-1 text-[#6B7280] max-h-72 overflow-y-scroll scrollbar-visible pr-5">
                     {reservationsMapping.map((res) => (
                       <div key={res.mappingId} className="mb-4">
-                        <li className="mb-1">{`• ${res.excelHeader}`}</li>
+                        <div className="flex items-center justify-between">
+                          <li className="mb-1">{`• ${res.excelHeader}`}</li>
+                          <label className="flex items-center gap-2 text-sm text-[#6B7280] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!res.required} 
+                              onChange={(e) => handleRequiredChange(res.mappingId!, !e.target.checked, 'reservations')}
+                              className="h-4 w-4 accent-[#6366F1] cursor-pointer"
+                            />
+                            {res.required ? "Columna requerida" : "Columna opcional"}
+                          </label>
+                        </div>
                         <Input
+                          required={res.required}
                           value={inputValues[res.mappingId!] ?? ""}
                           onChange={(e) => handleInputChange(res.mappingId!, e.target.value, 'reservations')}
                         />
@@ -408,10 +436,13 @@ export default function ImportPage() {
             </Card>
 
             <Card className="bg-[#F8FAFC] shadow-sm border border-[#E5E7EB]">
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <CardTitle className="text-lg font-semibold text-[#1F2937]">
                   Formato Requerido - Compras
                 </CardTitle>
+                <p className="text-sm text-[#6B7280] font-medium mt-1">
+                  Recordar que se pueden tener múltiples campos separados por punto y coma (;).
+                </p>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
@@ -421,8 +452,20 @@ export default function ImportPage() {
                   <ul className="space-y-1 text-[#6B7280] max-h-72 overflow-y-scroll scrollbar-visible pr-5">
                     {paymentMapping.map((res) => (
                       <div key={res.mappingId} className="mb-4">
-                        <li className="mb-1">{`• ${res.excelHeader}`}</li>
+                        <div className="flex items-center justify-between">
+                          <li className="mb-1">{`• ${res.excelHeader}`}</li>
+                          <label className="flex items-center gap-2 text-sm text-[#6B7280] cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={!res.required} 
+                              onChange={(e) => handleRequiredChange(res.mappingId!, !e.target.checked, 'payment')}
+                              className="h-4 w-4 accent-[#6366F1] cursor-pointer"
+                            />
+                            {res.required ? "Columna requerida" : "Columna opcional"}
+                          </label>
+                        </div>
                         <Input
+                          required={res.required}
                           value={inputValues[res.mappingId!] ?? ""}
                           onChange={(e) => handleInputChange(res.mappingId!, e.target.value, 'payment')}
                         />
@@ -474,7 +517,7 @@ export default function ImportPage() {
               />
               <Button 
                 size="sm" 
-                className="h-9 px-4 bg-[#6366F1] hover:bg-[#5B5BD6]"
+                className="h-9 px-4 bg-[#6366F1] hover:bg-[#5B5BD6] cursor-pointer"
                 onClick={handleDateFilter}
               >
                 Aplicar
@@ -507,6 +550,12 @@ export default function ImportPage() {
                         {` - ${getStatusText(job.status)}`}
                         {job.fileType && ` - ${job.fileType === 'PAYMENT' ? 'Compras' : 'Clases'}`}
                       </p>
+                      {job.errorMessage && (
+                        <p className="mt-1 text-xs text-red-600 bg-red-50 border border-red-200 rounded-md px-2 py-1 leading-snug">
+                          <span className="font-semibold">Detalle del error:</span>{" "}
+                          {job.errorMessage}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>

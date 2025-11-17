@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   ArrowLeft,
   Mail,
@@ -25,16 +25,12 @@ import {
 import { useClientReservations } from "@/hooks/use-client-reservations"
 import { useClientPayments } from "@/hooks/use-client-payments"
 import { Client } from "@/interfaces/client-table"
+import { getDefaultMonthDateRange } from "@/lib/format-date"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// Default dates for reservations: del 1 al 31 de julio
-const DEFAULT_RESERVATIONS_DATE_FROM = '2025-07-01';
-const DEFAULT_RESERVATIONS_DATE_TO = '2025-07-31';
-
-// Default dates for payments: del 1 al 31 de julio
-const DEFAULT_PAYMENTS_DATE_FROM = '2025-07-01';
-const DEFAULT_PAYMENTS_DATE_TO = '2025-07-31';
+const { from: DEFAULT_RESERVATIONS_DATE_FROM, to: DEFAULT_RESERVATIONS_DATE_TO } = getDefaultMonthDateRange();
+const { from: DEFAULT_PAYMENTS_DATE_FROM, to: DEFAULT_PAYMENTS_DATE_TO } = getDefaultMonthDateRange();
 
 // Helper function to format date without UTC timezone issues
 const formatDateString = (dateString: string | null): string => {

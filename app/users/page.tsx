@@ -18,7 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Plus, Pencil, Trash2, Shield } from "lucide-react"
+import { Plus, Pencil, Trash2, Shield, EyeOff, Eye } from "lucide-react"
 import { Switch } from "@/components/ui/switch"
 import { useUsers } from "@/hooks/use-users"
 import { useRoles } from "@/hooks/use-roles"
@@ -40,7 +40,8 @@ export default function UsersPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<Role>({ id: 1, name: "USER", description: "Rol por defecto" });
-
+  const [showPassword, setShowPassword] = useState(false);
+  
   const { users, fetchUsers, createUser, updateUser, deleteUser } = useUsers();
   const { roles, fetchRoles, updateRole } = useRoles();
   const { permissions, fetchPermissions } = usePermissions();
@@ -274,6 +275,30 @@ export default function UsersPage() {
                     value={editingUser?.email || ""}
                     onChange={(e) => setEditingUser(editingUser ? { ...editingUser, email: e.target.value } : null)}
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-password">Nueva contraseña</Label>
+                  <div className="relative">
+                    <Input
+                    id="edit-pwd"
+                    type={showPassword ? "text" : "password"}
+                    value={editingUser?.password || ""}
+                    onChange={(e) => setEditingUser(editingUser ? { ...editingUser, password: e.target.value } : null)}
+                  />
+                    <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-role">Rol</Label>

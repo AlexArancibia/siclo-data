@@ -16,10 +16,9 @@ import {
 } from "lucide-react"
 import Link from "next/link"
 import { useClientsView } from "@/hooks/use-clients-view"
+import { getDefaultMonthDateRange } from "@/lib/format-date"
 
-// Default dates for initial load: del 1 al 31 de julio
-const DEFAULT_DATE_FROM = '2025-07-01';
-const DEFAULT_DATE_TO = '2025-07-31';
+const { from: DEFAULT_DATE_FROM, to: DEFAULT_DATE_TO } = getDefaultMonthDateRange();
 
 // Helper function to format date without UTC timezone issues
 const formatDateString = (dateString: string | null): string => {

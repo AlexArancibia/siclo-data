@@ -83,9 +83,11 @@ export function useMappings() {
   };
 
   return { 
-    reservationsMapping, 
+    reservationsMapping,
+    setReservationsMapping,
     fetchReservationsMapping, 
-    paymentMapping, 
+    paymentMapping,
+    setPaymentMapping,
     fetchPaymentMapping, 
     updateMapping,
     importJobs,

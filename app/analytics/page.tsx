@@ -22,7 +22,7 @@ import {
 import { useState, useEffect } from "react"
 import { useReports } from "@/hooks/use-reports"
 import { getSeriesKeys, transformReportResponse } from "@/lib/transform-report"
-import { formatDate } from "@/lib/format-date"
+import { formatDate, getDefaultMonthDateRange } from "@/lib/format-date"
 import { InteractiveChartLegend } from "@/components/interactive-chart-legend"
 import { useChartLegend } from "@/hooks/use-chart-legend"
 
@@ -229,9 +229,7 @@ export default function AnalyticsPage() {
   const [currentPageInactivos, setCurrentPageInactivos] = useState(1)
   const [currentPageInstructores, setCurrentPageInstructores] = useState(1)
 
-  // Fechas por defecto: del 1 al 31 de julio
-  const DEFAULT_START_DATE = "2025-07-01";
-  const DEFAULT_END_DATE = "2025-07-31";
+  const { from: DEFAULT_START_DATE, to: DEFAULT_END_DATE } = getDefaultMonthDateRange();
   
   const [startDate, setStartDate] = useState(DEFAULT_START_DATE);
   const [endDate, setEndDate] = useState(DEFAULT_END_DATE);
@@ -444,49 +442,59 @@ export default function AnalyticsPage() {
                 />
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={dataStudioChart}>
-                    <defs>
-                      {colorPalette.map((color, index) => (
-                        <linearGradient key={`studio-gradient-${index}`} id={`studio-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                          <stop offset="95%" stopColor={color} stopOpacity={0} />
-                        </linearGradient>
-                      ))}
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 12, fill: "#6B7280" }}
-                      ticks={
-                        dataStudioChart.length > 0
-                        ? [dataStudioChart[0]?.name, dataStudioChart[dataStudioChart.length - 1]?.name]
-                        : []
-                      }
-                      tickFormatter={(value) => formatDate(value)}
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 12, fill: "#6B7280" }} 
-                      tickFormatter={(value) => `${value}`}
-                    />
-                    <Tooltip labelFormatter={(value) => formatDate(value)}/>
-                    {getSeriesKeys(dataStudioChart).map((key, index) => (
-                      <Area
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={colorPalette[index % colorPalette.length]}
-                        fillOpacity={1}
-                        fill={`url(#studio-color${(index % colorPalette.length) + 1})`}
-                        strokeWidth={2}
-                        dot={false}
-                        name={key}
-                        hide={hiddenStudio[key]}
+                {loading ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <div className="text-sm text-muted-foreground">Cargando...</div>
+                  </div>
+                ) : dataStudioChart.length === 0 ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <div className="text-sm text-muted-foreground">No hay datos en las fechas seleccionadas</div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={dataStudioChart}>
+                      <defs>
+                        {colorPalette.map((color, index) => (
+                          <linearGradient key={`studio-gradient-${index}`} id={`studio-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={color} stopOpacity={0} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12, fill: "#6B7280" }}
+                        ticks={
+                          dataStudioChart.length > 0
+                          ? [dataStudioChart[0]?.name, dataStudioChart[dataStudioChart.length - 1]?.name]
+                          : []
+                        }
+                        tickFormatter={(value) => formatDate(value)}
                       />
-                    ))}
-                    <Legend onClick={handleStudioLegend}/>
-                  </AreaChart>
-                </ResponsiveContainer>
+                      <YAxis 
+                        tick={{ fontSize: 12, fill: "#6B7280" }} 
+                        tickFormatter={(value) => `${value}`}
+                      />
+                      <Tooltip labelFormatter={(value) => formatDate(value)}/>
+                      {getSeriesKeys(dataStudioChart).map((key, index) => (
+                        <Area
+                          key={key}
+                          type="monotone"
+                          dataKey={key}
+                          stroke={colorPalette[index % colorPalette.length]}
+                          fillOpacity={1}
+                          fill={`url(#studio-color${(index % colorPalette.length) + 1})`}
+                          strokeWidth={2}
+                          dot={false}
+                          name={key}
+                          hide={hiddenStudio[key]}
+                        />
+                      ))}
+                      <Legend onClick={handleStudioLegend}/>
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
 
@@ -502,46 +510,56 @@ export default function AnalyticsPage() {
                 />
               </CardHeader>
               <CardContent>
-                <ResponsiveContainer width="100%" height={300}>
-                  <AreaChart data={dataDisciplineChart}>
-                    <defs>
-                      {colorPalette.map((color, index) => (
-                        <linearGradient key={`discipline-gradient-${index}`} id={`discipline-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                          <stop offset="95%" stopColor={color} stopOpacity={0} />
-                        </linearGradient>
-                      ))}
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                    <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 12, fill: "#6B7280" }}
-                      ticks={
-                        dataDisciplineChart.length > 0
-                        ? [dataDisciplineChart[0]?.name, dataDisciplineChart[dataDisciplineChart.length - 1]?.name]
-                        : []
-                      }
-                      tickFormatter={(value) => formatDate(value)}
-                    />
-                    <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
-                    <Tooltip labelFormatter={(value) => formatDate(value)} />
-                    {getSeriesKeys(dataDisciplineChart).map((key, index) => (
-                      <Area
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={colorPalette[index % colorPalette.length]}
-                        fillOpacity={1}
-                        fill={`url(#discipline-color${(index % colorPalette.length) + 1})`}
-                        strokeWidth={2}
-                        dot={false}
-                        name={key}
-                        hide={hiddenDiscipline[key]}
+                {loading ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <div className="text-sm text-muted-foreground">Cargando...</div>
+                  </div>
+                ) : dataDisciplineChart.length === 0 ? (
+                  <div className="flex items-center justify-center h-[300px]">
+                    <div className="text-sm text-muted-foreground">No hay datos en las fechas seleccionadas</div>
+                  </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={dataDisciplineChart}>
+                      <defs>
+                        {colorPalette.map((color, index) => (
+                          <linearGradient key={`discipline-gradient-${index}`} id={`discipline-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                            <stop offset="95%" stopColor={color} stopOpacity={0} />
+                          </linearGradient>
+                        ))}
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                      <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12, fill: "#6B7280" }}
+                        ticks={
+                          dataDisciplineChart.length > 0
+                          ? [dataDisciplineChart[0]?.name, dataDisciplineChart[dataDisciplineChart.length - 1]?.name]
+                          : []
+                        }
+                        tickFormatter={(value) => formatDate(value)}
                       />
-                    ))}
-                    <Legend onClick={handleDisciplineLegend}/>
-                  </AreaChart>
-                </ResponsiveContainer>
+                      <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
+                      <Tooltip labelFormatter={(value) => formatDate(value)} />
+                      {getSeriesKeys(dataDisciplineChart).map((key, index) => (
+                        <Area
+                          key={key}
+                          type="monotone"
+                          dataKey={key}
+                          stroke={colorPalette[index % colorPalette.length]}
+                          fillOpacity={1}
+                          fill={`url(#discipline-color${(index % colorPalette.length) + 1})`}
+                          strokeWidth={2}
+                          dot={false}
+                          name={key}
+                          hide={hiddenDiscipline[key]}
+                        />
+                      ))}
+                      <Legend onClick={handleDisciplineLegend}/>
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -558,45 +576,55 @@ export default function AnalyticsPage() {
               />
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={dataInstructorChart}>
-                  <defs>
-                    {instructorColorPalette.map((color, index) => (
-                      <linearGradient key={`instructor-gradient-${index}`} id={`instructor-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                        <stop offset="95%" stopColor={color} stopOpacity={0} />
-                      </linearGradient>
-                    ))}
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
-                  <XAxis 
-                      dataKey="name" 
-                      tick={{ fontSize: 12, fill: "#6B7280" }}
-                      ticks={
-                        dataInstructorChart.length > 0
-                        ? [dataInstructorChart[0]?.name, dataInstructorChart[dataInstructorChart.length - 1]?.name]
-                        : []
-                      }
-                      tickFormatter={(value) => formatDate(value)}
-                    />
-                  <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
-                  <Tooltip labelFormatter={(value) => formatDate(value)}/>
-                  {getSeriesKeys(dataInstructorChart).map((key, index) => (
-                      <Area
-                        key={key}
-                        type="monotone"
-                        dataKey={key}
-                        stroke={instructorColorPalette[index % instructorColorPalette.length]}
-                        fillOpacity={1}
-                        fill={`url(#instructor-color${(index % instructorColorPalette.length) + 1})`}
-                        strokeWidth={2}
-                        dot={false}
-                        name={key}
-                        hide={hiddenInstructor[key]}
+              {loading ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="text-sm text-muted-foreground">Cargando...</div>
+                </div>
+              ) : dataInstructorChart.length === 0 ? (
+                <div className="flex items-center justify-center h-[300px]">
+                  <div className="text-sm text-muted-foreground">No hay datos en las fechas seleccionadas</div>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={dataInstructorChart}>
+                    <defs>
+                      {instructorColorPalette.map((color, index) => (
+                        <linearGradient key={`instructor-gradient-${index}`} id={`instructor-color${index + 1}`} x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                          <stop offset="95%" stopColor={color} stopOpacity={0} />
+                        </linearGradient>
+                      ))}
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
+                    <XAxis 
+                        dataKey="name" 
+                        tick={{ fontSize: 12, fill: "#6B7280" }}
+                        ticks={
+                          dataInstructorChart.length > 0
+                          ? [dataInstructorChart[0]?.name, dataInstructorChart[dataInstructorChart.length - 1]?.name]
+                          : []
+                        }
+                        tickFormatter={(value) => formatDate(value)}
                       />
-                    ))}
-                </AreaChart>
-              </ResponsiveContainer>
+                    <YAxis tick={{ fontSize: 12, fill: "#6B7280" }} />
+                    <Tooltip labelFormatter={(value) => formatDate(value)}/>
+                    {getSeriesKeys(dataInstructorChart).map((key, index) => (
+                        <Area
+                          key={key}
+                          type="monotone"
+                          dataKey={key}
+                          stroke={instructorColorPalette[index % instructorColorPalette.length]}
+                          fillOpacity={1}
+                          fill={`url(#instructor-color${(index % instructorColorPalette.length) + 1})`}
+                          strokeWidth={2}
+                          dot={false}
+                          name={key}
+                          hide={hiddenInstructor[key]}
+                        />
+                      ))}
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </CardContent>
           </Card>
 

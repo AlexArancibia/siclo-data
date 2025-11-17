@@ -11,7 +11,7 @@ export interface ImportJob {
   jobId: number;
   fileName: string;
   fileType: 'RESERVATION' | 'PAYMENT';
-  status: 'SUCCESS' | 'ERROR' | 'PENDING' | 'PROCESSING';
+  status: 'SUCCESS' | 'ERROR' | 'PENDING' | 'PROCESSING' | 'FAILED';
   errorMessage: string | null;
   createdAt: string;
   finishedAt: string | null;

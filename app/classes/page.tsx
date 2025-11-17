@@ -18,10 +18,9 @@ import {
   X,
 } from "lucide-react"
 import { useClassesView } from "@/hooks/use-classes-view"
+import { getDefaultMonthDateRange } from "@/lib/format-date"
 
-// Default dates for initial load: del 1 al 31 de julio
-const DEFAULT_DATE_FROM = '2025-07-01';
-const DEFAULT_DATE_TO = '2025-07-31';
+const { from: DEFAULT_DATE_FROM, to: DEFAULT_DATE_TO } = getDefaultMonthDateRange();
 
 const getStatusBadge = (status: string) => {
   switch (status) {

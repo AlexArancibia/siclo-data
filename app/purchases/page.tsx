@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react"
 import { usePaymentsView } from "@/hooks/use-payments-view"
+import { getDefaultMonthDateRange } from "@/lib/format-date"
 
 const getPaymentTypeBadge = (paymentType: string) => {
   switch (paymentType) {
@@ -52,9 +53,7 @@ const getPaymentTypeBadge = (paymentType: string) => {
   }
 }
 
-// Default dates for initial load: del 1 al 31 de julio
-const DEFAULT_DATE_FROM = '2025-07-01';
-const DEFAULT_DATE_TO = '2025-07-31';
+const { from: DEFAULT_DATE_FROM, to: DEFAULT_DATE_TO } = getDefaultMonthDateRange();
 
 export default function PurchasesPage() {
   const [clientEmail, setClientEmail] = useState("")
