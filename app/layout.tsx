@@ -29,11 +29,11 @@ export default function RootLayout({
     <html lang="es" className={`${poppins.variable} antialiased`} suppressHydrationWarning>
       <body className="font-sans">
         <ThemeProvider defaultTheme="light" storageKey="dashboard-theme">
-          <AuthProvider>
-            <DateProvider>
+          <DateProvider>
+            <AuthProvider>
               {children}
-            </DateProvider>
-          </AuthProvider>
+            </AuthProvider>
+          </DateProvider>
           <Toaster />
         </ThemeProvider>
       </body>

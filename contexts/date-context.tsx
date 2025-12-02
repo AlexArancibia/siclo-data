@@ -20,8 +20,8 @@ export function DateProvider({ children }: { children: React.ReactNode }) {
   const [endDate, setEndDate] = useState<string | null>(DEFAULT_DATE_TO);
 
   const resetDates = () => {
-    setStartDate(null);
-    setEndDate(null);
+    setStartDate(DEFAULT_DATE_FROM);
+    setEndDate(DEFAULT_DATE_TO);
   };
 
   return (

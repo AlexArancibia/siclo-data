@@ -8,6 +8,7 @@ import { UserCredentials } from "@/interfaces/user-credentials";
 import { LoginResponse } from "@/interfaces/auth";
 import { AuthContextType } from "@/interfaces/auth-context";
 import { jwtDecode } from "jwt-decode";
+import { useDate } from "./date-context";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -16,6 +17,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const { resetDates } = useDate();
   
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -66,6 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem("currentUser", JSON.stringify(data.user));
 
       setUser(data.user);
+      resetDates();
       return true;
     } catch (error) {
       return false;
