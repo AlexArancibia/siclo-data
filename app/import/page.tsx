@@ -28,6 +28,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { toast } from "sonner";
 import { getDefaultMonthDateRange } from "@/lib/format-date";
+import { useDate } from "@/contexts/date-context";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -46,12 +47,8 @@ export default function ImportPage() {
   } = useMappings();
   const [mappingToUpdate, setMappingToUpdate] = useState<Mapping[]>([]);
   const [inputValues, setInputValues] = useState<{ [id: number]: string }>({});
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
-  const [appliedDateFrom, setAppliedDateFrom] = useState<string>("");
-  const [appliedDateTo, setAppliedDateTo] = useState<string>("");
+  const { startDate, endDate, setStartDate, setEndDate } = useDate();
   const [currentPage, setCurrentPage] = useState(0);
-  const [filterTrigger, setFilterTrigger] = useState(0);
   const pageSize = 50;
 
   useEffect(() => {
@@ -59,36 +56,22 @@ export default function ImportPage() {
     fetchPaymentMapping();
     
     const { from, to } = getDefaultMonthDateRange();
-    
-    setDateFrom(from);
-    setDateTo(to);
-    setAppliedDateFrom(from);
-    setAppliedDateTo(to);
-    // Cargar datos iniciales con las fechas por defecto
-    fetchImportJobs(from, to, 0, pageSize);
+
+    let startApplied;
+    let endApplied;
+
+    if (startDate && endDate) {
+      startApplied = startDate;
+      endApplied = endDate;
+    } else {
+      startApplied = from;
+      endApplied = to;
+    }
+
+    setStartDate(startApplied);
+    setEndDate(endApplied);
+    fetchImportJobs(startApplied ?? "", endApplied ?? "", 0, pageSize);
   }, []);
-
-  // Solo actualizar cuando cambia la página o las fechas aplicadas
-  useEffect(() => {
-    if (appliedDateFrom && appliedDateTo) {
-      console.log('appliedDateFrom', appliedDateFrom);
-      console.log('appliedDateTo', appliedDateTo);
-      fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, appliedDateFrom, appliedDateTo, filterTrigger]);
-
-  const handleDateFilter = () => {
-    // Validar que la fecha "desde" no sea mayor que la fecha "hasta"
-    if (new Date(dateFrom) > new Date(dateTo)) {
-      toast.error("La fecha 'desde' no puede ser mayor que la fecha 'hasta'");
-      return;
-    }
-    setAppliedDateFrom(dateFrom);
-    setAppliedDateTo(dateTo);
-    setCurrentPage(0);
-    setFilterTrigger(prev => prev + 1);
-  };
 
   const formatDate = (dateString: string) => {
     try {
@@ -184,11 +167,6 @@ export default function ImportPage() {
       ...prev,
       [type]: null,
     }));
-
-    // Refrescar el historial de importaciones con las fechas aplicadas
-    if (appliedDateFrom && appliedDateTo) {
-      fetchImportJobs(appliedDateFrom, appliedDateTo, currentPage, pageSize);
-    }
   };
 
   const handleSaveChanges = async () => {
@@ -504,21 +482,21 @@ export default function ImportPage() {
             <div className="flex items-center gap-2">
               <Input
                 type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                value={startDate || ""}
+                onChange={(e) => setStartDate(e.target.value)}
                 className="w-[160px] h-9"
               />
               <span className="text-[#6B7280] text-sm">a</span>
               <Input
                 type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                value={endDate || ""}
+                onChange={(e) => setEndDate(e.target.value)}
                 className="w-[160px] h-9"
               />
               <Button 
                 size="sm" 
                 className="h-9 px-4 bg-[#6366F1] hover:bg-[#5B5BD6] cursor-pointer"
-                onClick={handleDateFilter}
+                onClick={() => fetchImportJobs(startDate ?? "", endDate ?? "", 0, pageSize)}
               >
                 Aplicar
               </Button>

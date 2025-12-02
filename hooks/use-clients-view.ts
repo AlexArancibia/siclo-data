@@ -25,7 +25,8 @@ export function useClientsView() {
     dateEnd: string,
     page: number = 0,
     size: number = 50,
-    client?: string
+    client?: string,
+    sortByAmountDesc?: boolean,
   ) => {
     try {
       if (!token) throw new Error("No hay token, inicia sesión");
@@ -36,6 +37,10 @@ export function useClientsView() {
       url.searchParams.set('to', dateEnd);
       url.searchParams.set('page', page.toString());
       url.searchParams.set('size', size.toString());
+
+      if (sortByAmountDesc) {
+        url.searchParams.set('sortField', 'total_amount_received');
+      }
       
       // Add optional client filter only if provided
       if (client && client.trim() !== '') {
@@ -59,18 +64,19 @@ export function useClientsView() {
   const startIndex = ((clientsTable?.page ?? 0) * (clientsTable?.size ?? itemsPerPage)) + 1;
   const totalDisplay = clientsTable?.totalElements ?? 0;
 
-  const goFirst = async () => {
+  const goFirst = async (includesOrder: boolean) => {
     const page = 0;
     await getClientsTable(
       currentFilters.dateStart,
       currentFilters.dateEnd,
       page,
       itemsPerPage,
-      currentFilters.client
+      currentFilters.client,
+      includesOrder
     );
   };
 
-  const goPrev = async () => {
+  const goPrev = async (includesOrder: boolean) => {
     const curr = clientsTable?.page ?? 0;
     if (curr > 0) {
       const nextPage = curr - 1;
@@ -79,12 +85,13 @@ export function useClientsView() {
         currentFilters.dateEnd,
         nextPage,
         itemsPerPage,
-        currentFilters.client
+        currentFilters.client,
+        includesOrder
       );
     }
   };
 
-  const goNext = async () => {
+  const goNext = async (includesOrder: boolean) => {
     const curr = clientsTable?.page ?? 0;
     const lastIdx = (clientsTable?.totalPages ?? 1) - 1;
     if (curr < lastIdx) {
@@ -94,12 +101,13 @@ export function useClientsView() {
         currentFilters.dateEnd,
         nextPage,
         itemsPerPage,
-        currentFilters.client
+        currentFilters.client,
+        includesOrder
       );
     }
   };
 
-  const goLast = async () => {
+  const goLast = async (includesOrder: boolean) => {
     const lastIdx = (clientsTable?.totalPages ?? 1) - 1;
     if (lastIdx >= 0 && (clientsTable?.page ?? 0) !== lastIdx) {
       await getClientsTable(
@@ -107,7 +115,8 @@ export function useClientsView() {
         currentFilters.dateEnd,
         lastIdx,
         itemsPerPage,
-        currentFilters.client
+        currentFilters.client,
+        includesOrder
       );
     }
   };

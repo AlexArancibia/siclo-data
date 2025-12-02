@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { AuthProvider } from "@/contexts/auth-context"
 import { Toaster } from "@/components/ui/sonner"
 import "./globals.css"
+import { DateProvider } from "@/contexts/date-context"
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -28,7 +29,11 @@ export default function RootLayout({
     <html lang="es" className={`${poppins.variable} antialiased`} suppressHydrationWarning>
       <body className="font-sans">
         <ThemeProvider defaultTheme="light" storageKey="dashboard-theme">
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <DateProvider>
+              {children}
+            </DateProvider>
+          </AuthProvider>
           <Toaster />
         </ThemeProvider>
       </body>

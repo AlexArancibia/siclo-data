@@ -21,6 +21,7 @@ import {
 } from "lucide-react"
 import { usePaymentsView } from "@/hooks/use-payments-view"
 import { getDefaultMonthDateRange } from "@/lib/format-date"
+import { useDate } from "@/contexts/date-context"
 
 const getPaymentTypeBadge = (paymentType: string) => {
   switch (paymentType) {
@@ -58,8 +59,7 @@ const { from: DEFAULT_DATE_FROM, to: DEFAULT_DATE_TO } = getDefaultMonthDateRang
 export default function PurchasesPage() {
   const [clientEmail, setClientEmail] = useState("")
   const [paymentTypeFilter, setPaymentTypeFilter] = useState("all")
-  const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM)
-  const [dateTo, setDateTo] = useState(DEFAULT_DATE_TO)
+  const { startDate, endDate, setStartDate, setEndDate } = useDate();
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
@@ -67,7 +67,6 @@ export default function PurchasesPage() {
     visiblePurchases,
     startIndex,
     totalDisplay,
-    currentPage,
     itemsPerPage,
     getPaymentTable,
     goFirst,
@@ -81,8 +80,8 @@ export default function PurchasesPage() {
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       // Use default dates if datepickers are empty
-      const from = dateFrom || DEFAULT_DATE_FROM;
-      const to = dateTo || DEFAULT_DATE_TO;
+      const from = startDate || DEFAULT_DATE_FROM;
+      const to = endDate || DEFAULT_DATE_TO;
       getPaymentTable(from, to, 0, itemsPerPage)
       getPaymentMethods()
     })
@@ -92,13 +91,13 @@ export default function PurchasesPage() {
   const handleSearch = () => {
     // Apply filters when search button is clicked
     // Use default dates if datepickers are empty
-    const from = dateFrom || DEFAULT_DATE_FROM;
-    const to = dateTo || DEFAULT_DATE_TO;
+    const from = startDate || DEFAULT_DATE_FROM;
+    const to = endDate || DEFAULT_DATE_TO;
     const client = clientEmail.trim() || undefined;
     const payment = paymentTypeFilter !== 'all' ? paymentTypeFilter : undefined;
     
     // Check if any filters are actually being applied (dates different from defaults or other filters)
-    const hasFilters = client !== undefined || payment !== undefined || dateFrom !== DEFAULT_DATE_FROM || dateTo !== DEFAULT_DATE_TO;
+    const hasFilters = client !== undefined || payment !== undefined || startDate !== DEFAULT_DATE_FROM || endDate !== DEFAULT_DATE_TO;
     setHasAppliedFilters(hasFilters);
     
     getPaymentTable(from, to, 0, itemsPerPage, client, payment);
@@ -108,8 +107,8 @@ export default function PurchasesPage() {
     // Clear all filters and reset to initial state
     setClientEmail("");
     setPaymentTypeFilter("all");
-    setDateFrom(DEFAULT_DATE_FROM);
-    setDateTo(DEFAULT_DATE_TO);
+    setStartDate(DEFAULT_DATE_FROM);
+    setEndDate(DEFAULT_DATE_TO);
     setHasAppliedFilters(false);
     // Reload with default dates and no filters
     getPaymentTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);
@@ -239,15 +238,15 @@ export default function PurchasesPage() {
 
             <Input
               type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              value={startDate || ""}
+              onChange={(e) => setStartDate(e.target.value)}
               placeholder="Desde"
               className="w-full sm:w-40"
             />
             <Input
               type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              value={endDate || ""}
+              onChange={(e) => setEndDate(e.target.value)}
               placeholder="Hasta"
               className="w-full sm:w-40"
             />

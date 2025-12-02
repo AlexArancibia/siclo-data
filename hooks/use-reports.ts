@@ -10,6 +10,7 @@ export function useReports(): UseReportsResult {
   const [dataStudio, setDataStudio] = useState<ReportResponse | null>(null);
   const [dataInstructor, setDataInstructor] = useState<ReportResponse | null>(null);
   const [dataDiscipline, setDataDiscipline] = useState<ReportResponse | null>(null);
+  const [dataStudioDiscipline, setDataStudioDiscipline] = useState<ReportResponse | null>(null);
   const [topDisciplines, setTopDisciplines] = useState<TopDiscipline[] | null>(null);
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[] | null>(null);
 
@@ -24,11 +25,14 @@ export function useReports(): UseReportsResult {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("No hay token, inicia sesión");
 
-      const [resStudio, resInstructor, resDiscipline, resTopDisciplines, resPaymentMethods] = await Promise.all([
+      const [resStudio, resInstructor, resStudioDiscipline, resDiscipline, resTopDisciplines, resPaymentMethods] = await Promise.all([
         fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=studio&from=${from}&to=${to}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=instructor&from=${from}&to=${to}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        }),
+        fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=studio,discipline&from=${from}&to=${to}`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
         fetch(`${API_BASE_URL}/reports/reservations/series?groupBy=discipline&from=${from}&to=${to}`, {
@@ -42,13 +46,14 @@ export function useReports(): UseReportsResult {
         }),
       ]);
 
-      if (!resStudio.ok || !resInstructor.ok || !resDiscipline.ok || !resTopDisciplines.ok || !resPaymentMethods.ok) {
+      if (!resStudio.ok || !resInstructor.ok || !resStudioDiscipline || !resDiscipline.ok || !resTopDisciplines.ok || !resPaymentMethods.ok) {
         throw new Error("Error en alguna petición");
       }
 
-      const [studio, instructor, discipline, topDisciplines, paymentMethods] = await Promise.all([
+      const [studio, instructor, studioDiscipline, discipline, topDisciplines, paymentMethods] = await Promise.all([
         resStudio.json(),
         resInstructor.json(),
+        resStudioDiscipline.json(),
         resDiscipline.json(),
         resTopDisciplines.json(),
         resPaymentMethods.json(),
@@ -56,6 +61,7 @@ export function useReports(): UseReportsResult {
 
       setDataStudio(studio);
       setDataInstructor(instructor);
+      setDataStudioDiscipline(studioDiscipline);
       setDataDiscipline(discipline);
       setTopDisciplines(topDisciplines);
       setPaymentMethods(paymentMethods);
@@ -66,5 +72,5 @@ export function useReports(): UseReportsResult {
     }
   };
 
-  return { dataStudio, dataInstructor, dataDiscipline, topDisciplines, paymentMethods, loading, error, fetchReports };
+  return { dataStudio, dataInstructor, dataStudioDiscipline, dataDiscipline, topDisciplines, paymentMethods, loading, error, fetchReports };
 }

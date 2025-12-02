@@ -5,6 +5,7 @@ import { PaymentMethod } from "./payment-method";
 export interface UseReportsResult {
   dataStudio: ReportResponse | null;
   dataInstructor: ReportResponse | null;
+  dataStudioDiscipline: ReportResponse | null;
   dataDiscipline: ReportResponse | null;
   topDisciplines: TopDiscipline[] | null;
   paymentMethods: PaymentMethod[] | null;

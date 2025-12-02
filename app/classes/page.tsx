@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { useClassesView } from "@/hooks/use-classes-view"
 import { getDefaultMonthDateRange } from "@/lib/format-date"
+import { useDate } from "@/contexts/date-context"
 
 const { from: DEFAULT_DATE_FROM, to: DEFAULT_DATE_TO } = getDefaultMonthDateRange();
 
@@ -75,8 +76,7 @@ const getPaymentMethodBadge = (method: string) => {
 export default function ClassesPage() {
   const [instructorFilter, setInstructorFilter] = useState("")
   const [clientFilter, setClientFilter] = useState("")
-  const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM)
-  const [dateTo, setDateTo] = useState(DEFAULT_DATE_TO)
+  const { startDate, endDate, setStartDate, setEndDate } = useDate();
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
@@ -84,7 +84,6 @@ export default function ClassesPage() {
     visibleReservations,
     startIndex,
     totalDisplay,
-    currentPage,
     itemsPerPage,
     getReservationsTable,
     goFirst,
@@ -96,8 +95,8 @@ export default function ClassesPage() {
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       // Use default dates if datepickers are empty
-      const from = dateFrom || DEFAULT_DATE_FROM;
-      const to = dateTo || DEFAULT_DATE_TO;
+      const from = startDate || DEFAULT_DATE_FROM;
+      const to = endDate || DEFAULT_DATE_TO;
       getReservationsTable(from, to, 0, itemsPerPage)
     })
     return () => cancelAnimationFrame(rafId)
@@ -106,13 +105,13 @@ export default function ClassesPage() {
   const handleSearch = () => {
     // Apply filters when search button is clicked
     // Use default dates if datepickers are empty
-    const from = dateFrom || DEFAULT_DATE_FROM;
-    const to = dateTo || DEFAULT_DATE_TO;
+    const from = startDate || DEFAULT_DATE_FROM;
+    const to = endDate || DEFAULT_DATE_TO;
     const instructor = instructorFilter.trim() || undefined;
     const client = clientFilter.trim() || undefined;
     
     // Check if any filters are actually being applied (dates different from defaults or other filters)
-    const hasFilters = instructor !== undefined || client !== undefined || dateFrom !== DEFAULT_DATE_FROM || dateTo !== DEFAULT_DATE_TO;
+    const hasFilters = instructor !== undefined || client !== undefined || startDate !== DEFAULT_DATE_FROM || endDate !== DEFAULT_DATE_TO;
     setHasAppliedFilters(hasFilters);
     
     getReservationsTable(from, to, 0, itemsPerPage, instructor, client);
@@ -122,8 +121,8 @@ export default function ClassesPage() {
     // Clear all filters and reset to initial state
     setInstructorFilter("");
     setClientFilter("");
-    setDateFrom(DEFAULT_DATE_FROM);
-    setDateTo(DEFAULT_DATE_TO);
+    setStartDate(DEFAULT_DATE_FROM);
+    setEndDate(DEFAULT_DATE_TO);
     setHasAppliedFilters(false);
     // Reload with default dates and no filters
     getReservationsTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);
@@ -227,15 +226,15 @@ export default function ClassesPage() {
               </div>
               <Input
                 type="date"
-                value={dateFrom}
-                onChange={(e) => setDateFrom(e.target.value)}
+                value={startDate || ""}
+                onChange={(e) => setStartDate(e.target.value)}
                 placeholder="Desde"
                 className="w-full sm:w-40"
               />
               <Input
                 type="date"
-                value={dateTo}
-                onChange={(e) => setDateTo(e.target.value)}
+                value={endDate || ""}
+                onChange={(e) => setEndDate(e.target.value)}
                 placeholder="Hasta"
                 className="w-full sm:w-40"
               />

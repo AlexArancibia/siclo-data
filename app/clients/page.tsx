@@ -17,6 +17,8 @@ import {
 import Link from "next/link"
 import { useClientsView } from "@/hooks/use-clients-view"
 import { getDefaultMonthDateRange } from "@/lib/format-date"
+import { useDate } from "@/contexts/date-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 const { from: DEFAULT_DATE_FROM, to: DEFAULT_DATE_TO } = getDefaultMonthDateRange();
 
@@ -43,8 +45,8 @@ const formatDateString = (dateString: string | null): string => {
 
 export default function ClientsPage() {
   const [clientEmail, setClientEmail] = useState("")
-  const [dateFrom, setDateFrom] = useState(DEFAULT_DATE_FROM)
-  const [dateTo, setDateTo] = useState(DEFAULT_DATE_TO)
+  const { startDate, endDate, setStartDate, setEndDate } = useDate();
+  const [applyOrderByAmount, setApplyOrderByAmount] = useState("no-order");
   const [hasAppliedFilters, setHasAppliedFilters] = useState(false)
 
   const {
@@ -52,7 +54,6 @@ export default function ClientsPage() {
     visibleClients,
     startIndex,
     totalDisplay,
-    currentPage,
     itemsPerPage,
     getClientsTable,
     goFirst,
@@ -64,8 +65,8 @@ export default function ClientsPage() {
   useEffect(() => {
     const rafId = requestAnimationFrame(() => {
       // Use default dates if datepickers are empty
-      const from = dateFrom || DEFAULT_DATE_FROM;
-      const to = dateTo || DEFAULT_DATE_TO;
+      const from = startDate || DEFAULT_DATE_FROM;
+      const to = endDate || DEFAULT_DATE_TO;
       getClientsTable(from, to, 0, itemsPerPage)
     })
     return () => cancelAnimationFrame(rafId)
@@ -74,22 +75,24 @@ export default function ClientsPage() {
   const handleSearch = () => {
     // Apply filters when search button is clicked
     // Use default dates if datepickers are empty
-    const from = dateFrom || DEFAULT_DATE_FROM;
-    const to = dateTo || DEFAULT_DATE_TO;
+    const from = startDate || DEFAULT_DATE_FROM;
+    const to = endDate || DEFAULT_DATE_TO;
     const client = clientEmail.trim() || undefined;
+    const applyOrder = applyOrderByAmount !== "no-order" ? true : false;
     
     // Check if any filters are actually being applied (dates different from defaults or other filters)
-    const hasFilters = client !== undefined || dateFrom !== DEFAULT_DATE_FROM || dateTo !== DEFAULT_DATE_TO;
+    const hasFilters = client !== undefined || startDate !== DEFAULT_DATE_FROM || endDate !== DEFAULT_DATE_TO;
     setHasAppliedFilters(hasFilters);
     
-    getClientsTable(from, to, 0, itemsPerPage, client);
+    getClientsTable(from, to, 0, itemsPerPage, client, applyOrder);
   }
 
   const handleClear = () => {
     // Clear all filters and reset to initial state
     setClientEmail("");
-    setDateFrom(DEFAULT_DATE_FROM);
-    setDateTo(DEFAULT_DATE_TO);
+    setStartDate(DEFAULT_DATE_FROM);
+    setEndDate(DEFAULT_DATE_TO);
+    setApplyOrderByAmount("no-order");
     setHasAppliedFilters(false);
     // Reload with default dates and no filters
     getClientsTable(DEFAULT_DATE_FROM, DEFAULT_DATE_TO, 0, itemsPerPage);
@@ -130,17 +133,26 @@ export default function ClientsPage() {
               />
             </div>
 
+            <Select value={applyOrderByAmount === "no-order" ? "" : applyOrderByAmount} onValueChange={setApplyOrderByAmount}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SelectValue placeholder="Ordenar por" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="high-low">De mayor a menor monto</SelectItem>
+              </SelectContent>
+            </Select>
+
             <Input
               type="date"
-              value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
+              value={startDate || ""}
+              onChange={(e) => setStartDate(e.target.value)}
               placeholder="Desde"
               className="w-full sm:w-40"
             />
             <Input
               type="date"
-              value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
+              value={endDate || ""}
+              onChange={(e) => setEndDate(e.target.value)}
               placeholder="Hasta"
               className="w-full sm:w-40"
             />
@@ -234,7 +246,10 @@ export default function ClientsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={goFirst}
+                  onClick={() => {
+                    const applyOrder = applyOrderByAmount !== "no-order" ? true : false;
+                    goFirst(applyOrder);
+                  }}
                   disabled={(clientsTable?.page ?? 0) === 0}
                   title="Primera página"
                 >
@@ -243,7 +258,10 @@ export default function ClientsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={goPrev}
+                  onClick={() => {
+                    const applyOrder = applyOrderByAmount !== "no-order" ? true : false;
+                    goPrev(applyOrder);
+                  }}
                   disabled={(clientsTable?.page ?? 0) === 0}
                 >
                   <ChevronLeft className="w-4 h-4" />
@@ -252,7 +270,10 @@ export default function ClientsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={goNext}
+                  onClick={() => {
+                    const applyOrder = applyOrderByAmount !== "no-order" ? true : false;
+                    goNext(applyOrder);
+                  }}
                   disabled={(clientsTable?.page ?? 0) + 1 >= (clientsTable?.totalPages ?? 1)}
                 >
                   Siguiente
@@ -261,7 +282,10 @@ export default function ClientsPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={goLast}
+                  onClick={() => {
+                    const applyOrder = applyOrderByAmount !== "no-order" ? true : false;
+                    goLast(applyOrder);
+                  }}
                   disabled={(clientsTable?.page ?? 0) + 1 >= (clientsTable?.totalPages ?? 1)}
                   title="Última página"
                 >

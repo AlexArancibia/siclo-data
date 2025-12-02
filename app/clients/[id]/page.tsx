@@ -26,6 +26,7 @@ import { useClientReservations } from "@/hooks/use-client-reservations"
 import { useClientPayments } from "@/hooks/use-client-payments"
 import { Client } from "@/interfaces/client-table"
 import { getDefaultMonthDateRange } from "@/lib/format-date"
+import { useDate } from "@/contexts/date-context"
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -88,8 +89,7 @@ export default function ClientDetailPage() {
   const [loading, setLoading] = useState(true)
 
   // Reservations state
-  const [reservationsDateFrom, setReservationsDateFrom] = useState(DEFAULT_RESERVATIONS_DATE_FROM)
-  const [reservationsDateTo, setReservationsDateTo] = useState(DEFAULT_RESERVATIONS_DATE_TO)
+  const { startDate, endDate, setStartDate, setEndDate } = useDate();
   const [hasAppliedReservationsFilters, setHasAppliedReservationsFilters] = useState(false)
 
   // Payments state
@@ -183,16 +183,16 @@ export default function ClientDetailPage() {
   }, [clientId]);
 
   const handleReservationsSearch = () => {
-    const from = reservationsDateFrom || DEFAULT_RESERVATIONS_DATE_FROM;
-    const to = reservationsDateTo || DEFAULT_RESERVATIONS_DATE_TO;
-    const hasFilters = reservationsDateFrom !== DEFAULT_RESERVATIONS_DATE_FROM || reservationsDateTo !== DEFAULT_RESERVATIONS_DATE_TO;
+    const from = startDate || DEFAULT_RESERVATIONS_DATE_FROM;
+    const to = endDate || DEFAULT_RESERVATIONS_DATE_TO;
+    const hasFilters = startDate !== DEFAULT_RESERVATIONS_DATE_FROM || endDate !== DEFAULT_RESERVATIONS_DATE_TO;
     setHasAppliedReservationsFilters(hasFilters);
     getClientReservations(from, to, 0, reservationsItemsPerPage);
   }
 
   const handleReservationsClear = () => {
-    setReservationsDateFrom(DEFAULT_RESERVATIONS_DATE_FROM);
-    setReservationsDateTo(DEFAULT_RESERVATIONS_DATE_TO);
+    setStartDate(DEFAULT_RESERVATIONS_DATE_FROM);
+    setEndDate(DEFAULT_RESERVATIONS_DATE_TO);
     setHasAppliedReservationsFilters(false);
     getClientReservations(DEFAULT_RESERVATIONS_DATE_FROM, DEFAULT_RESERVATIONS_DATE_TO, 0, reservationsItemsPerPage);
   }
@@ -325,15 +325,15 @@ export default function ClientDetailPage() {
               <div className="flex flex-col sm:flex-row gap-4 mb-6">
                 <Input
                   type="date"
-                  value={reservationsDateFrom}
-                  onChange={(e) => setReservationsDateFrom(e.target.value)}
+                  value={startDate || ""}
+                  onChange={(e) => setStartDate(e.target.value)}
                   placeholder="Desde"
                   className="w-full sm:w-40"
                 />
                 <Input
                   type="date"
-                  value={reservationsDateTo}
-                  onChange={(e) => setReservationsDateTo(e.target.value)}
+                  value={endDate || ""}
+                  onChange={(e) => setEndDate(e.target.value)}
                   placeholder="Hasta"
                   className="w-full sm:w-40"
                 />
